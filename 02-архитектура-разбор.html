@@ -1,0 +1,867 @@
+<title>Как устроен сбор фидбека</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=PT+Serif:wght@700&display=swap">
+<style>
+  :root{
+    --paper:#E8EDF2;
+    --grid:#D6DFE9;
+    --sheet:#FCFDFE;
+    --edge:#D3DEE9;
+    --text:#141D29;
+    --pencil:#5C6D82;
+    --ink:#2B4E9E;
+    --ink-wash:#E7EDFA;
+    --red:#A32A21;
+    --red-wash:#F8E8E5;
+    --shadow:rgba(20,40,70,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D131C;
+      --grid:#18212D;
+      --sheet:#151E2A;
+      --edge:#27333F;
+      --text:#E3E9F1;
+      --pencil:#93A4B7;
+      --ink:#8CAFF3;
+      --ink-wash:#1A2740;
+      --red:#E8867C;
+      --red-wash:#2D1B19;
+      --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D131C;
+    --grid:#18212D;
+    --sheet:#151E2A;
+    --edge:#27333F;
+    --text:#E3E9F1;
+    --pencil:#93A4B7;
+    --ink:#8CAFF3;
+    --ink-wash:#1A2740;
+    --red:#E8867C;
+    --red-wash:#2D1B19;
+    --shadow:rgba(0,0,0,.45);
+  }
+
+  body{
+    background-color:var(--paper);
+    background-image:linear-gradient(var(--grid) 1px, transparent 1px),
+                     linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:26px 26px;
+    color:var(--text);
+    font-family:"PT Sans","Helvetica Neue",Arial,sans-serif;
+    font-size:17px;
+    line-height:1.6;
+    padding:32px 20px 72px;
+  }
+  .sheet{
+    max-width:860px;
+    margin:0 auto;
+    background:var(--sheet);
+    border:1px solid var(--edge);
+    box-shadow:0 1px 0 var(--shadow), 0 12px 40px -24px var(--shadow);
+    padding:44px 44px 52px 60px;
+    position:relative;
+  }
+  /* поля тетрадного листа */
+  .sheet::before{
+    content:"";
+    position:absolute;
+    top:0; bottom:0; left:40px;
+    width:1px;
+    background:var(--red);
+    opacity:.5;
+  }
+  @media (max-width:640px){
+    body{padding:16px 8px 48px}
+    .sheet{padding:28px 20px 36px 34px}
+    .sheet::before{left:20px}
+  }
+
+  .stack{display:flex; flex-direction:column; gap:34px}
+
+  h1{
+    font-family:"PT Serif",Georgia,serif;
+    font-size:2.05rem;
+    line-height:1.2;
+    font-weight:700;
+    margin:0 0 12px;
+    text-wrap:balance;
+  }
+  .deck{
+    max-width:62ch;
+    margin:0;
+    color:var(--pencil);
+    font-size:1.03rem;
+  }
+  .head{display:flex; flex-direction:column; gap:10px}
+  .stamp{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.7rem;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+    color:var(--pencil);
+  }
+
+  h2{
+    font-family:"PT Serif",Georgia,serif;
+    font-size:1.32rem;
+    font-weight:700;
+    margin:0 0 14px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--edge);
+    text-wrap:balance;
+  }
+  section > :last-child{margin-bottom:0}
+  p{max-width:65ch; margin:0 0 12px}
+  strong{font-weight:700}
+  code, .mono{font-family:"PT Mono",ui-monospace,monospace; font-size:.88em}
+  code{color:var(--ink)}
+
+  .lede{font-size:1.08rem; max-width:60ch}
+
+  /* нумерованный путь — единственная настоящая последовательность на странице */
+  ol.path{
+    list-style:none;
+    counter-reset:s;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-width:66ch;
+  }
+  ol.path li{
+    counter-increment:s;
+    position:relative;
+    padding-left:38px;
+  }
+  ol.path li::before{
+    content:counter(s);
+    position:absolute;
+    left:0; top:4px;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.82rem;
+    color:var(--ink);
+    border:1px solid var(--ink);
+    border-radius:50%;
+    width:22px; height:22px;
+    display:grid; place-items:center;
+  }
+
+  /* три части */
+  dl.parts{margin:0; display:flex; flex-direction:column; gap:16px}
+  dl.parts > div{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:4px 20px;
+    border-left:2px solid var(--ink);
+    padding-left:16px;
+  }
+  dl.parts dt{font-weight:700}
+  dl.parts dt .path{
+    display:block;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.78rem;
+    font-weight:400;
+    color:var(--ink);
+  }
+  dl.parts dd{margin:0; color:var(--text)}
+  @media (max-width:600px){ dl.parts > div{grid-template-columns:1fr} }
+
+  /* таблицы данных */
+  .tables{display:flex; flex-direction:column; gap:18px}
+  .tbl{border:1px solid var(--edge); background:var(--paper)}
+  .tbl h3{
+    margin:0;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.85rem;
+    font-weight:400;
+    color:var(--ink);
+    padding:8px 14px;
+    border-bottom:1px solid var(--edge);
+    background:var(--ink-wash);
+  }
+  .tbl h3 span{color:var(--pencil); font-family:"PT Sans",sans-serif; margin-left:8px}
+  .tbl ul{list-style:none; margin:0; padding:6px 0}
+  .tbl li{
+    display:grid;
+    grid-template-columns:170px 1fr;
+    gap:14px;
+    padding:5px 14px;
+    font-size:.95rem;
+  }
+  .tbl li .col{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.82rem;
+    color:var(--text);
+  }
+  .tbl li .gloss{color:var(--pencil)}
+  @media (max-width:600px){ .tbl li{grid-template-columns:1fr; gap:2px} }
+
+  /* красный карандаш: обязательные проверки */
+  ul.checks{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:16px}
+  ul.checks li{
+    display:grid;
+    grid-template-columns:22px 1fr;
+    gap:12px;
+    max-width:68ch;
+  }
+  ul.checks li::before{
+    content:"✗";
+    color:var(--red);
+    font-family:"PT Serif",Georgia,serif;
+    font-size:1.15rem;
+    line-height:1.35;
+  }
+  ul.checks b{display:block; font-weight:700}
+  ul.checks span{color:var(--pencil); font-size:.96rem}
+
+  /* сценарий подделки */
+  .attack{
+    border-left:3px solid var(--red);
+    background:var(--red-wash);
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .attack .row{display:flex; flex-direction:column; gap:3px}
+  .attack .who{color:var(--pencil); font-size:.9rem}
+  .attack .req{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.8rem;
+    line-height:1.5;
+    word-break:break-word;
+  }
+  .attack .verdict-line{
+    border-top:1px solid var(--red);
+    padding-top:12px;
+    font-size:.96rem;
+  }
+
+  /* что ловит какая проверка */
+  .scroll{overflow-x:auto}
+  table.matrix{
+    width:100%;
+    min-width:540px;
+    border-collapse:collapse;
+    font-size:.93rem;
+  }
+  table.matrix th{
+    text-align:left;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.7rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--pencil);
+    font-weight:400;
+    padding:0 16px 8px 0;
+    border-bottom:1px solid var(--edge);
+  }
+  table.matrix td{
+    padding:10px 16px 10px 0;
+    border-bottom:1px solid var(--edge);
+    vertical-align:top;
+  }
+  table.matrix td:first-child{font-weight:700}
+  table.matrix td:last-child{padding-right:0; color:var(--red)}
+  table.matrix tr:last-child td{border-bottom:0}
+
+  /* дорого / дешевле */
+  table.trade{
+    width:100%;
+    border-collapse:collapse;
+    font-size:.96rem;
+  }
+  table.trade caption{
+    text-align:left;
+    color:var(--pencil);
+    font-size:.9rem;
+    padding-bottom:10px;
+  }
+  table.trade th{
+    text-align:left;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.72rem;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--pencil);
+    font-weight:400;
+    padding:0 14px 8px 0;
+    border-bottom:1px solid var(--edge);
+  }
+  table.trade td{
+    padding:9px 14px 9px 0;
+    border-bottom:1px solid var(--edge);
+    vertical-align:top;
+  }
+  table.trade td:first-child{color:var(--pencil); text-decoration:line-through; text-decoration-color:var(--edge)}
+  table.trade td:last-child{padding-right:0}
+  table.trade tr:last-child td{border-bottom:0}
+
+  /* глоссарий */
+  dl.gloss{margin:0; display:flex; flex-direction:column; gap:0}
+  dl.gloss > div{
+    display:grid;
+    grid-template-columns:190px 1fr;
+    gap:6px 20px;
+    padding:10px 0;
+    border-bottom:1px dotted var(--edge);
+  }
+  dl.gloss > div:last-child{border-bottom:0}
+  dl.gloss dt{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.85rem;
+    color:var(--ink);
+  }
+  dl.gloss dd{margin:0}
+  @media (max-width:600px){ dl.gloss > div{grid-template-columns:1fr} }
+
+  /* гейт — единственный тяжёлый блок на странице */
+  .gate{
+    border:2px solid var(--ink);
+    background:var(--ink-wash);
+    padding:26px 28px;
+  }
+  .gate h2{border-bottom-color:var(--ink); margin-bottom:12px}
+  .gate ol{
+    margin:18px 0;
+    padding-left:26px;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    max-width:64ch;
+  }
+  .gate ol li::marker{font-family:"PT Mono",ui-monospace,monospace; font-size:.85rem; color:var(--ink)}
+  .verdict{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    border-top:1px solid var(--ink);
+    padding-top:14px;
+    font-size:.98rem;
+  }
+  .verdict p{margin:0; max-width:66ch}
+  .verdict .k{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.75rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink);
+    margin-right:8px;
+  }
+
+  /* открытые вопросы */
+  ul.open{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px}
+  ul.open li{max-width:68ch}
+  ul.open .q{font-weight:700}
+  ul.open .note{display:block; color:var(--pencil); font-size:.95rem}
+  ul.open .sub{
+    display:block;
+    margin-top:8px;
+    padding-left:14px;
+    border-left:2px solid var(--edge);
+    color:var(--pencil);
+    font-size:.92rem;
+  }
+  .chip{
+    display:inline-block;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.68rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    border:1px solid var(--pencil);
+    color:var(--pencil);
+    padding:1px 7px;
+    margin-left:8px;
+    vertical-align:2px;
+    white-space:nowrap;
+  }
+  .chip.risk{border-color:var(--red); color:var(--red)}
+
+  /* диаграмма */
+  figure.fig{margin:0; display:flex; flex-direction:column; gap:12px}
+  .fig .canvas{overflow-x:auto; padding:4px 0}
+  .fig svg{display:block; width:100%; min-width:860px; height:auto; color:var(--text)}
+  figcaption{color:var(--pencil); font-size:.92rem; max-width:66ch}
+  .bx{fill:var(--sheet); stroke:currentColor; stroke-width:1.25}
+  .bx-gate{fill:var(--red-wash); stroke:var(--red); stroke-width:1.25}
+  .bx-store{fill:var(--ink-wash); stroke:var(--ink); stroke-width:1.25}
+  .box-frame{fill:none; stroke:var(--ink); stroke-width:1.25; stroke-dasharray:5 5}
+  .ln{stroke:currentColor; stroke-width:1.25; fill:none}
+  .ln-red{stroke:var(--red); stroke-width:1.25; fill:none}
+  .mk{fill:currentColor}
+  .mk-red{fill:var(--red)}
+  .t{font-family:"PT Sans",sans-serif; font-size:13px; fill:currentColor; text-anchor:middle}
+  .t.b{font-weight:700}
+  .ts{font-family:"PT Sans",sans-serif; font-size:10.5px; fill:var(--pencil); text-anchor:middle}
+  .tm{font-family:"PT Mono",monospace; font-size:10px; fill:var(--ink); text-anchor:middle}
+  .tl{font-family:"PT Sans",sans-serif; font-size:11px; fill:var(--pencil)}
+  .tl.c{text-anchor:middle}
+  .tl.red{fill:var(--red)}
+  .th{font-family:"PT Mono",monospace; font-size:9.5px; letter-spacing:.09em; fill:var(--pencil); text-anchor:middle}
+
+  a{color:var(--ink)}
+  a:focus-visible, .sheet :focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+</style>
+
+<main class="sheet">
+  <div class="stack">
+
+    <header class="head">
+      <div class="stamp">02 · разбор архитектуры · перед шагом 4</div>
+      <h1>Как устроен сбор фидбека</h1>
+      <p class="deck">Та же архитектура, что в <code>02-архитектура.md</code>, но простыми словами. Цель страницы —
+      не «ознакомиться», а суметь пересказать. В конце проверочная работа: семь вопросов, на которые нужно
+      ответить своими словами, закрыв эту страницу. Пока не сдана — шаг 4 не начинаем.</p>
+    </header>
+
+    <section>
+      <h2>Одной фразой</h2>
+      <p class="lede">Мы делаем <strong>одну небольшую программу</strong>, которая живёт на сервере компании
+      и умеет три вещи: показать сотруднику форму, сложить его фидбек в базу, показать админам список
+      и отдать его файлом для Excel. Больше в первой версии ничего.</p>
+      <p class="lede">Пароль она не спрашивает вообще. <strong>Кто перед нами — нам сообщает вход в контур</strong>,
+      через который сотрудник уже прошёл утром.</p>
+    </section>
+
+    <section>
+      <figure class="fig">
+        <div class="canvas">
+          <svg viewBox="0 0 1106 434" role="img" aria-label="Путь одного фидбека. Слева сотрудник и админ приходят из контура. Вход в контур — SSO-шлюз, не наш код — подтверждает, кто человек, и передаёт нам его почту. Дальше наши проверки: наш ли домен и есть ли email в списке админов; при неудаче обе ведут на экран явного отказа. Форма отправляет запись в API, API пишет и читает PostgreSQL и кладёт файлы в том uploads. Кабинет просит записи у API и выгружает CSV в Excel.">
+            <defs>
+              <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" class="mk"></path>
+              </marker>
+              <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" class="mk-red"></path>
+              </marker>
+            </defs>
+
+            <text class="th" x="73" y="26">КТО ПРИШЁЛ</text>
+            <text class="th" x="208" y="26">ВХОД В КОНТУР</text>
+            <text class="th" x="431" y="26">НАШИ ПРОВЕРКИ</text>
+            <text class="th" x="664" y="26">НАШ СЕРВЕР · ОДНО ПРИЛОЖЕНИЕ</text>
+            <text class="th" x="982" y="26">ГДЕ ЛЕЖИТ</text>
+
+            <rect class="box-frame" x="522" y="44" width="284" height="376" rx="2"></rect>
+
+            <rect class="bx" x="16" y="60" width="114" height="56" rx="2"></rect>
+            <text class="t b" x="73" y="84">Сотрудник</text>
+            <text class="ts" x="73" y="102">из план-факта</text>
+
+            <rect class="bx" x="16" y="334" width="114" height="56" rx="2"></rect>
+            <text class="t b" x="73" y="358">Админ</text>
+            <text class="ts" x="73" y="376">из контура</text>
+
+            <rect class="bx-store" x="158" y="60" width="100" height="330" rx="2"></rect>
+            <text class="t b" x="208" y="198">SSO-шлюз</text>
+            <text class="t b" x="208" y="216">контура</text>
+            <text class="ts" x="208" y="240">уже подтвердил,</text>
+            <text class="ts" x="208" y="254">кто это</text>
+            <text class="ts" x="208" y="408">не наш код</text>
+
+            <rect class="bx-gate" x="366" y="60" width="130" height="56" rx="2"></rect>
+            <text class="t" x="431" y="84">Домен почты</text>
+            <text class="t" x="431" y="102">наш?</text>
+
+            <rect class="bx-gate" x="366" y="334" width="130" height="56" rx="2"></rect>
+            <text class="t" x="431" y="358">Email в списке</text>
+            <text class="t" x="431" y="376">админов?</text>
+
+            <rect class="bx-gate" x="366" y="186" width="130" height="72" rx="2"></rect>
+            <text class="t" x="431" y="214">Явный отказ</text>
+            <text class="ts" x="431" y="234">видно, что нет</text>
+            <text class="ts" x="431" y="248">доступа и почему</text>
+
+            <rect class="bx" x="538" y="60" width="252" height="56" rx="2"></rect>
+            <text class="t b" x="664" y="82">Форма</text>
+            <text class="tm" x="664" y="102">/</text>
+
+            <rect class="bx" x="538" y="160" width="252" height="120" rx="2"></rect>
+            <text class="t b" x="664" y="196">API</text>
+            <text class="ts" x="664" y="216">принять фидбек · принять файл</text>
+            <text class="ts" x="664" y="232">отдать список · собрать CSV</text>
+            <text class="ts" x="664" y="256">проверяет раздел, длину текста,</text>
+            <text class="ts" x="664" y="270">тип и размер файла</text>
+
+            <rect class="bx" x="538" y="334" width="252" height="56" rx="2"></rect>
+            <text class="t b" x="664" y="358">Кабинет</text>
+            <text class="tm" x="664" y="378">/admin</text>
+
+            <rect class="bx-store" x="882" y="150" width="200" height="68" rx="2"></rect>
+            <text class="t b" x="982" y="178">PostgreSQL</text>
+            <text class="tm" x="982" y="198">feedback · attachment</text>
+
+            <rect class="bx-store" x="882" y="236" width="200" height="64" rx="2"></rect>
+            <text class="t b" x="982" y="262">Том uploads/</text>
+            <text class="ts" x="982" y="282">PNG · JPG, до 5 МБ, до 3 шт.</text>
+            <text class="ts" x="982" y="318">отдаём своим обработчиком,</text>
+            <text class="ts" x="982" y="331">не как статику</text>
+
+            <rect class="bx-store" x="882" y="334" width="200" height="56" rx="2"></rect>
+            <text class="t b" x="982" y="358">CSV</text>
+            <text class="ts" x="982" y="376">открывается в Excel</text>
+
+            <line class="ln" x1="134" y1="88" x2="154" y2="88" marker-end="url(#ar)"></line>
+            <line class="ln" x1="134" y1="362" x2="154" y2="362" marker-end="url(#ar)"></line>
+
+            <line class="ln" x1="262" y1="88" x2="362" y2="88" marker-end="url(#ar)"></line>
+            <text class="tl c" x="312" y="80">его почта</text>
+            <line class="ln" x1="262" y1="362" x2="362" y2="362" marker-end="url(#ar)"></line>
+            <text class="tl c" x="312" y="354">его почта</text>
+
+            <line class="ln" x1="500" y1="88" x2="534" y2="88" marker-end="url(#ar)"></line>
+            <text class="tl c" x="511" y="80">да</text>
+            <line class="ln" x1="500" y1="362" x2="534" y2="362" marker-end="url(#ar)"></line>
+            <text class="tl c" x="511" y="354">да</text>
+
+            <line class="ln-red" x1="431" y1="120" x2="431" y2="182" marker-end="url(#arr)"></line>
+            <text class="tl red" x="438" y="156">нет</text>
+            <line class="ln-red" x1="431" y1="330" x2="431" y2="262" marker-end="url(#arr)"></line>
+            <text class="tl red" x="438" y="300">нет</text>
+
+            <line class="ln" x1="664" y1="120" x2="664" y2="156" marker-end="url(#ar)"></line>
+            <text class="tl" x="672" y="142">отправка</text>
+
+            <line class="ln" x1="664" y1="330" x2="664" y2="284" marker-end="url(#ar)"></line>
+            <text class="tl" x="672" y="312">просит записи</text>
+
+            <line class="ln" x1="794" y1="184" x2="878" y2="184" marker-start="url(#ar)" marker-end="url(#ar)"></line>
+            <text class="tl c" x="836" y="176">пишет и читает</text>
+
+            <line class="ln" x1="794" y1="268" x2="878" y2="268" marker-end="url(#ar)"></line>
+            <text class="tl c" x="836" y="260">кладёт файлы</text>
+
+            <line class="ln" x1="794" y1="362" x2="878" y2="362" marker-end="url(#ar)"></line>
+            <text class="tl c" x="836" y="354">выгрузка</text>
+          </svg>
+        </div>
+        <figcaption>Один фидбек от нажатия «Отправить» до строки в CSV. Вход в контур — не наш код:
+        шлюз подтверждает, кто человек, до того как запрос дойдёт до нас. Красным — то, что обязаны
+        проверить мы сами; обе проверки при неудаче ведут на экран отказа, а не в пустоту.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>Путь одного фидбека</h2>
+      <ol class="path">
+        <li>Сотрудник кликает ссылку в шапке план-факта. <strong>Заново входить не нужно:</strong> он уже в контуре, и вход контура сообщает нам его рабочую почту.</li>
+        <li>Сервер смотрит на почту. Домен не наш — дальше не пускаем и показываем понятный отказ. Ни отправить фидбек, ни попасть в кабинет он не может.</li>
+        <li>Сотрудник выбирает раздел план-факта, пишет текст, при желании прикладывает до трёх скриншотов и нажимает «Отправить».</li>
+        <li>Сервер проверяет: раздел выбран, текст не короче 10 символов, файлы — PNG или JPG до 5 МБ. Что-то не так — говорим, что именно, и <strong>не теряем уже написанный текст</strong>.</li>
+        <li>Текст, почта, раздел и дата ложатся в базу. Скриншоты ложатся на диск сервера, в базе от них остаётся только путь. Подтверждение сотруднику — быстрее трёх секунд.</li>
+      </ol>
+      <p style="margin-top:16px">Дальше зеркально: админ из списка заходит в кабинет, видит все записи свежими сверху,
+      фильтрует по разделу, периоду дат и слову в тексте, видит, сколько записей попало под фильтр, и выгружает
+      ровно эту выборку в CSV.</p>
+    </section>
+
+    <section>
+      <h2>Вход: вахтёр на входе в здание</h2>
+      <p>Сотрудник приходит к нам уже залогиненным во внутреннем ресурсе. Заставлять его входить второй раз —
+      лишний шаг, который стоит нам части ответов. Поэтому <strong>своего входа мы не делаем</strong>.</p>
+      <p>Работает это как вахтёр на входе в здание. Он проверяет пропуск и говорит нам имя вошедшего.
+      Мы пропуск больше не проверяем — мы смотрим в свой список: наш ли это домен и есть ли человек
+      среди админов, если он лезет в кабинет. Но у этой схемы есть условие: <strong>вахтёр работает только
+      если в здание нет второй двери с улицы.</strong> Если до нашего приложения можно достучаться напрямую,
+      минуя шлюз, то кто угодно пришлёт нам «имя» любого коллеги.</p>
+      <p><strong>Чего мы при этом не делаем</strong> — три вещи, которые кажутся простыми и все три опасны:
+      не читаем cookie план-факта (чужой домен, чужой секрет — их смена ключа ломает наш вход);
+      не принимаем токен в адресе страницы (он уезжает в историю браузера, в логи и в скриншот,
+      который сотрудник приложит к фидбеку); не верим почте, присланной браузером в параметре или
+      в поле формы (иначе любой оставит фидбек от имени руководителя).</p>
+      <p>Какой именно шлюз стоит в компании, ещё уточняется. Чтобы не ждать ответа, источник личности
+      спрятан за <strong>одну функцию</strong> <code>getCurrentUser()</code> с двумя реализациями и флагом
+      в конфиге: <code>proxy</code> — почта от шлюза (лучше подписанным токеном, тогда мы проверяем подпись
+      и нам не нужно полагаться на «нас не видно снаружи»), <code>google</code> — свой вход через Google
+      как резерв, настроенный так, чтобы проходить редиректом без единого экрана. Код пишется сегодня,
+      реализация выбирается флагом. Побочный эффект важнее самой функции: <strong>OAuth-клиент в Google
+      Workspace ушёл с критического пути</strong>, а он был единственным реальным риском для срока.</p>
+      <p><strong>VPN входом не считается.</strong> Он говорит «трафик из нашей сети», но не говорит, кто человек:
+      на VPN сидит и подрядчик, и незалоченный чужой ноутбук. А почта автора нужна нам по делу — через месяц,
+      собирая топ-5 проблем, мы должны иметь возможность вернуться и спросить, что именно не получилось.</p>
+      <p>Из план-факта в ссылке можно передавать <strong>безопасный контекст</strong> — не секреты, а подсказки:
+      <code>?section=выплаты</code> (предзаполним раздел, значение сверим со списком из конфига)
+      и <code>?from=/reports/march</code> (запомним, с какого экрана человек пришёл). Фидбек от этого
+      становится точнее: видно, на чём именно человека переклинило.</p>
+    </section>
+
+    <section>
+      <h2>Что ловит каждая проверка — и чего не ловит</h2>
+      <p>Здесь легко ошибиться, поэтому разберём подробно. <strong>Заголовок — это просто строчка текста,
+      которую отправитель дописывает к своему запросу.</strong> Как обратный адрес на конверте: писать
+      там можно что угодно. Проверка домена смотрит, <em>что написано</em> в строчке, а не <em>кто это написал</em>.</p>
+
+      <div class="attack">
+        <div class="row">
+          <span class="who">Обычный сотрудник, запрос прошёл через шлюз:</span>
+          <span class="req">X-Auth-Request-Email: dmitriy@company.com</span>
+        </div>
+        <div class="row">
+          <span class="who">Тот же сотрудник, запрос отправлен напрямую, мимо шлюза, одной командой из терминала:</span>
+          <span class="req">X-Auth-Request-Email: boss@company.com</span>
+        </div>
+        <p class="verdict-line">Для нашего кода эти два запроса выглядят одинаково. Проверка домена
+        в обоих случаях говорит «домен наш, проходи» — и во втором случае человек оказывается
+        в кабинете под чужим именем. <strong>Домен не ловит подделку никогда: в подделке домен как раз наш.</strong></p>
+      </div>
+
+      <p style="margin-top:20px">Отсюда главное: <strong>одной проверки не хватает, потому что проверки — про разное.</strong>
+      Первая отвечает на вопрос «это точно шлюз нам сказал?», вторая — «а этот человек вообще наш сотрудник?».</p>
+
+      <div class="scroll">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th scope="col">Проверка</th>
+              <th scope="col">Что ловит</th>
+              <th scope="col">Чего не ловит</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Подпись токена</td>
+              <td>Подделку: печать не подделать, не имея ключа шлюза</td>
+              <td>Гостя с настоящей корпоративной почтой</td>
+            </tr>
+            <tr>
+              <td>Нет второй двери</td>
+              <td>Подделку: мимо шлюза до нас не дотянуться</td>
+              <td>Ничего про человека — только про путь запроса</td>
+            </tr>
+            <tr>
+              <td>Домен почты</td>
+              <td>Подрядчика и гостя с чужой почтой</td>
+              <td>Подделку: в подделке домен наш</td>
+            </tr>
+            <tr>
+              <td>Список админов</td>
+              <td>Сотрудника, который полез в кабинет</td>
+              <td>Ничего про подлинность самой почты</td>
+            </tr>
+            <tr>
+              <td>VPN</td>
+              <td>Посторонних снаружи сети</td>
+              <td>Ничего про то, кто человек: дверь, а не бейдж</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:20px">Последняя строка — причина, по которой <strong>VPN не заменяет вход</strong>.
+      За дверью 300 сотрудников, подрядчики и чьи-то незалоченные ноутбуки. Если считать «пришёл из сети —
+      значит наш человек», то у фидбека не остаётся автора: есть 300 анонимов из одной подсети.</p>
+      <p>И почта нужна нам <strong>не для писем</strong> — писем в первой версии нет вообще, уведомления
+      вынесены в следующий заход. Она нужна ровно для одного: через месяц вы берёте топ-5 проблем
+      и возвращаетесь к автору с вопросом, что именно у него не получилось. Без почты фидбек —
+      анонимная жалоба, по которой нельзя действовать.</p>
+    </section>
+
+    <section>
+      <h2>Три части одной программы</h2>
+      <p>Это не три сервиса. Это одно приложение на Next.js, внутри которого три разных «лица».</p>
+      <dl class="parts">
+        <div>
+          <dt>Форма<span class="path">/</span></dt>
+          <dd>Страница для сотрудника: раздел, текст, скриншоты, кнопка. Её видит любой человек с рабочей почтой.</dd>
+        </div>
+        <div>
+          <dt>Кабинет<span class="path">/admin</span></dt>
+          <dd>Страница для админа: список записей, фильтры, карточка со скриншотами, кнопка выгрузки. Сотрудник не из списка админов получает здесь отказ.</dd>
+        </div>
+        <div>
+          <dt>API<span class="path">route handlers</span></dt>
+          <dd>Служебные окошки, куда браузер стучится за данными: принять фидбек, принять файл, отдать список, собрать CSV. Человек их не видит, но именно здесь стоят все проверки.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Где лежат данные</h2>
+      <p>Две таблицы в PostgreSQL. Ничего лишнего — ни статусов, ни тегов, ни комментариев: это следующий заход.</p>
+      <div class="tables">
+        <div class="tbl">
+          <h3>feedback <span>сама запись</span></h3>
+          <ul>
+            <li><span class="col">id</span><span class="gloss">номер записи</span></li>
+            <li><span class="col">author_email</span><span class="gloss">кто написал — берём из подтверждённой Google-почты, а не из поля в форме</span></li>
+            <li><span class="col">section</span><span class="gloss">про какой раздел план-факта</span></li>
+            <li><span class="col">text</span><span class="gloss">что написал</span></li>
+            <li><span class="col">created_at</span><span class="gloss">когда</span></li>
+          </ul>
+        </div>
+        <div class="tbl">
+          <h3>attachment <span>приложенный файл</span></h3>
+          <ul>
+            <li><span class="col">id</span><span class="gloss">номер файла</span></li>
+            <li><span class="col">feedback_id</span><span class="gloss">к какой записи он относится</span></li>
+            <li><span class="col">filename</span><span class="gloss">как файл назывался у сотрудника — только чтобы показать в карточке</span></li>
+            <li><span class="col">mime</span><span class="gloss">что это за файл на самом деле: image/png, image/jpeg</span></li>
+            <li><span class="col">size</span><span class="gloss">сколько весит</span></li>
+            <li><span class="col">path</span><span class="gloss">где он лежит на диске сервиса</span></li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:18px"><strong>Сами файлы в базу не кладём.</strong> Файлы — на диске, в папке <code>uploads/</code>;
+      в базе только путь к ним. Так база остаётся маленькой и быстрой.</p>
+      <p><strong>Список разделов и список админов лежат в коде</strong>, в файле <code>config/app.ts</code>.
+      Добавить раздел или админа — правка одной строки и новый деплой. Редактора в интерфейсе нет и в первой версии не будет.</p>
+    </section>
+
+    <section>
+      <h2>Проверки, которые обязаны быть в коде</h2>
+      <p>Это не «хорошо бы», а условие приёмки. Каждая проверка закрывает конкретную дырку.</p>
+      <ul class="checks">
+        <li>
+          <div>
+            <b>Почте из заголовка от шлюза верим только при выполненном условии.</b>
+            <span>Либо это подписанный токен и мы проверили подпись, либо приложение недоступно
+            напрямую в обход шлюза <em>и</em> шлюз перезаписывает этот заголовок, а не дополняет.
+            Без одного из двух любой сотрудник пришлёт заголовок с чужой почтой сам.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Почта берётся только из <code class="mono">getCurrentUser()</code>.</b>
+            <span>Ни параметр в адресе, ни поле формы, ни присланный клиентом токен источником личности быть не могут.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Домен почты проверяем на сервере, а не в браузере.</b>
+            <span>Шлюз пускает в контур и подрядчиков, и гостей: «прошёл шлюз» не равно «наш сотрудник».
+            А проверку, которая живёт в браузере, обходят через консоль разработчика за минуту.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Список админов проверяем на сервере при каждом запросе — и к странице кабинета, и к его API.</b>
+            <span>Не один раз при входе. Иначе достаточно узнать адрес запроса, чтобы получить все записи, минуя страницу.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Тип и размер файла проверяем на сервере; имя файла от пользователя никогда не используем как путь на диске.</b>
+            <span>Имя вида <code class="mono">../../config/app.ts</code> — это не шутка, а обычная попытка записать файл не туда, куда мы разрешили.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Файлы отдаём своим обработчиком, который проверяет права, а не как статику по прямой ссылке.</b>
+            <span>Иначе ссылка на скриншот из чужого фидбека открывается у любого, кто её получил.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <b>Режим локальной разработки в продакшене — не предупреждение, а отказ старта.</b>
+            <span>Локально личность подставляется из переменной окружения, иначе ничего не запустить.
+            Если этот режим окажется включён на проде, вход превращается в «напиши любую почту» —
+            поэтому приложение должно просто не подняться.</span>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Что мы сознательно не строим</h2>
+      <table class="trade">
+        <caption>Слева — то, что было бы дорого и не влияет на порог успеха. Справа — чем заменили.</caption>
+        <thead>
+          <tr><th scope="col">Дорого</th><th scope="col">Взяли вместо</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Своя аутентификация с паролями</td><td>Личность от входа в контур</td></tr>
+          <tr><td>Своя система ролей и прав</td><td>Список админов строкой в конфиге</td></tr>
+          <tr><td>Загрузка файлов в облачное хранилище</td><td>Диск сервиса, наружу ничего не уходит</td></tr>
+          <tr><td>Дашборд аналитики</td><td>Выгрузка в CSV, дальше Excel</td></tr>
+          <tr><td>Редактор разделов в админке</td><td>Список разделов в коде</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:16px">Причина одна: срок — один день до передачи на код-ревью. А порог успеха мы
+      договорились мерить не богатством админки, а тем, соберётся ли <strong>через месяц после релиза топ-5 проблем
+      из фидбека и уйдёт ли он в спринт</strong>. Всё, что не работает на этот порог, ждёт следующего захода.</p>
+    </section>
+
+    <section>
+      <h2>Где это окажется</h2>
+      <p>Docker-образ и <code>docker-compose</code>: приложение, PostgreSQL и папка для файлов — три части, поднимаются вместе.
+      Разворачивается внутри контура компании; наружу не выходят ни база, ни файлы.</p>
+      <p>Локально всё поднимается одной командой: <code>docker compose up</code>.</p>
+      <p>Перезапуск и обновление ничего не теряют: и база, и папка с файлами живут в томах — <em>снаружи</em> контейнера.
+      Контейнер можно выбросить и собрать заново, данные останутся.</p>
+    </section>
+
+    <section>
+      <h2>По-инженерному → по-человечески</h2>
+      <dl class="gloss">
+        <div><dt>Next.js</dt><dd>Каркас, в котором и страницы, и серверная часть живут в одном проекте. Поэтому нам хватает одного приложения, а не двух.</dd></div>
+        <div><dt>route handler</dt><dd>То самое служебное окошко API: адрес, на который браузер присылает данные и получает ответ.</dd></div>
+        <div><dt>PostgreSQL</dt><dd>База данных. Таблицы, строки, запросы вроде «дай записи по разделу X за март».</dd></div>
+        <div><dt>том (volume)</dt><dd>Папка, которая живёт снаружи контейнера, поэтому переживает перезапуск и обновление.</dd></div>
+        <div><dt>SSO-шлюз</dt><dd>Тот самый вахтёр: сервис, который стоит перед всеми внутренними ресурсами, проверяет человека один раз и дальше сообщает каждому приложению, кто пришёл.</dd></div>
+        <div><dt>заголовок запроса</dt><dd>Служебная строчка, которую добавляют к запросу рядом с самими данными; в ней шлюз передаёт нам почту. Добавить любой заголовок с любым содержимым может кто угодно — поэтому сам по себе заголовок ничего не доказывает.</dd></div>
+        <div><dt>подписанный токен (JWT)</dt><dd>Строка с данными и печатью. Печать проверяется чужим открытым ключом, поэтому подделать содержимое нельзя, а нам не нужно верить на слово тому, кто её принёс.</dd></div>
+        <div><dt>Google OAuth</dt><dd>Резервный вариант входа. Пароль сотрудник вводит у Google, нам достаётся только подтверждённая почта — свои пароли мы не храним вообще.</dd></div>
+        <div><dt>httpOnly-cookie</dt><dd>Метка «этот браузер уже вошёл». Её нельзя прочитать из JavaScript на странице, поэтому её сложнее украсть.</dd></div>
+        <div><dt>MIME-тип</dt><dd>Чем файл является на самом деле, а не что написано в его названии.</dd></div>
+        <div><dt>CSV</dt><dd>Таблица простым текстом. Открывается в Excel; кириллица не бьётся, если сохранить с правильной кодировкой — это отдельный пункт приёмки.</dd></div>
+        <div><dt>Docker Compose</dt><dd>Один файл-описание: какие части поднять и как их связать между собой.</dd></div>
+      </dl>
+    </section>
+
+    <section class="gate">
+      <h2>Проверочная работа</h2>
+      <p>Закройте эту страницу и ответьте своими словами — не термином, а тем, что происходит.
+      Если на каком-то вопросе спотыкаетесь, это мой недоработанный разбор, а не ваша невнимательность.</p>
+      <ol>
+        <li>Что происходит с фидбеком от нажатия «Отправить» до момента, когда его видит админ?</li>
+        <li>Почему нельзя просто поверить почте, которую прислал браузер? И что должно быть верно, чтобы мы поверили почте от шлюза?</li>
+        <li>Почему VPN не считается за вход — и зачем нам вообще почта автора?</li>
+        <li>Где лежат скриншоты и что от них остаётся в базе?</li>
+        <li>Что нужно сделать, чтобы добавить новый раздел план-факта? А чтобы добавить админа?</li>
+        <li>Почему после перезапуска сервиса ничего не теряется?</li>
+        <li>Что из первой версии выкинуто ради срока — и почему это не ломает цель проекта?</li>
+      </ol>
+      <div class="verdict">
+        <p><span class="k">Сдано</span>Ответили своими словами на все семь — идём на шаг 4: секреты и запуск.</p>
+        <p><span class="k">Не сдано</span>Я переписываю этот разбор и не иду дальше. Непонятая архитектура через
+        неделю превращается в «сделайте там как-нибудь» — и тогда решения принимает не автор продукта, а тот, кто пишет код.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Ещё не решено</h2>
+      <p>Четыре вопроса, без которых код можно написать, но нельзя запустить.</p>
+      <ul class="open">
+        <li>
+          <span class="q">Список разделов план-факта<span class="chip">нужен ответ</span></span>
+          <span class="note">Пока в конфиге заглушка. Нужен от заказчика; на код влияет одной строкой.</span>
+        </li>
+        <li>
+          <span class="q">Корпоративный домен для ограничения входа<span class="chip">нужен ответ</span></span>
+          <span class="note">Без него нечего проверять на сервере.</span>
+        </li>
+        <li>
+          <span class="q">Что стоит на входе в контур и что оно передаёт приложению<span class="chip">нужен ответ</span></span>
+          <span class="note">Раньше здесь был риск для срока: без OAuth-клиента в Google Workspace вход не работал,
+          и день превращался в неделю ожидания чужого согласования. Теперь риска нет — личность спрятана за одну
+          функцию с двумя реализациями, и код пишется, не дожидаясь ответа. Но ответ всё равно нужен до запуска;
+          вопросы к инфраструктуре, одним сообщением:
+          <span class="sub">1. Что стоит на входе: oauth2-proxy, Authelia, Authentik, Keycloak, Cloudflare Access,
+          Azure AD App Proxy, свой nginx с <code class="mono">auth_request</code>?
+          2. Какой заголовок с почтой передаётся приложению и в каком виде?
+          3. Может ли шлюз отдавать подписанный токен вместо голого заголовка? Если да — берём его.
+          4. Гарантирует ли шлюз перезапись этих заголовков и можно ли закрыть приложение от прямого доступа?
+          5. Как за шлюзом регистрируется новый сервис, кто это делает и за какое время?</span></span>
+        </li>
+        <li>
+          <span class="q">Куда деплоим внутри контура<span class="chip">нужен ответ</span></span>
+          <span class="note">Уточняем на шаге 4 вместе с секретами.</span>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+</main>

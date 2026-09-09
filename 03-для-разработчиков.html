@@ -1,0 +1,417 @@
+<title>Техспека сбора фидбека</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=PT+Mono&family=PT+Sans:ital,wght@0,400;0,700;1,400&family=PT+Serif:wght@700&display=swap">
+<style>
+  :root{
+    --paper:#E8EDF2;
+    --sheet:#FCFDFE;
+    --edge:#D3DEE9;
+    --text:#141D29;
+    --pencil:#5C6D82;
+    --ink:#2B4E9E;
+    --ink-wash:#E7EDFA;
+    --red:#A32A21;
+    --red-wash:#F8E8E5;
+    --shadow:rgba(20,40,70,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0D131C; --sheet:#151E2A; --edge:#27333F; --text:#E3E9F1;
+      --pencil:#93A4B7; --ink:#8CAFF3; --ink-wash:#1A2740;
+      --red:#E8867C; --red-wash:#2D1B19; --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0D131C; --sheet:#151E2A; --edge:#27333F; --text:#E3E9F1;
+    --pencil:#93A4B7; --ink:#8CAFF3; --ink-wash:#1A2740;
+    --red:#E8867C; --red-wash:#2D1B19; --shadow:rgba(0,0,0,.45);
+  }
+
+  body{
+    background:var(--paper);
+    color:var(--text);
+    font-family:"PT Sans","Helvetica Neue",Arial,sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    padding:28px 20px 64px;
+  }
+  .sheet{
+    max-width:900px;
+    margin:0 auto;
+    background:var(--sheet);
+    border:1px solid var(--edge);
+    box-shadow:0 12px 40px -26px var(--shadow);
+    padding:40px 44px 48px;
+  }
+  @media (max-width:640px){
+    body{padding:12px 8px 40px}
+    .sheet{padding:24px 18px 32px}
+  }
+  .stack{display:flex; flex-direction:column; gap:30px}
+
+  .stamp{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.7rem; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--pencil);
+  }
+  h1{
+    font-family:"PT Serif",Georgia,serif;
+    font-size:1.9rem; line-height:1.2; font-weight:700;
+    margin:10px 0 10px; text-wrap:balance;
+  }
+  .deck{margin:0; color:var(--pencil); max-width:64ch}
+  h2{
+    font-family:"PT Serif",Georgia,serif;
+    font-size:1.2rem; font-weight:700;
+    margin:0 0 12px; padding-bottom:7px;
+    border-bottom:1px solid var(--edge);
+    text-wrap:balance;
+  }
+  h3{
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;
+    font-weight:400; color:var(--pencil);
+    margin:0 0 10px;
+  }
+  p{margin:0 0 10px; max-width:70ch}
+  section > :last-child{margin-bottom:0}
+  code,.mono{font-family:"PT Mono",ui-monospace,monospace; font-size:.86em}
+  code{color:var(--ink)}
+  ul,ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:7px}
+  li{max-width:70ch}
+
+  /* что нужно от встречи */
+  .ask{
+    border:2px solid var(--ink);
+    background:var(--ink-wash);
+    padding:20px 22px;
+  }
+  .ask h2{border-bottom-color:var(--ink)}
+  .ask ol{counter-reset:a; list-style:none; padding-left:0; gap:12px}
+  .ask ol li{
+    counter-increment:a; position:relative; padding-left:34px;
+  }
+  .ask ol li::before{
+    content:counter(a);
+    position:absolute; left:0; top:2px;
+    font-family:"PT Mono",ui-monospace,monospace; font-size:.8rem;
+    color:var(--ink); border:1px solid var(--ink); border-radius:50%;
+    width:22px; height:22px; display:grid; place-items:center;
+  }
+  .ask b{display:block}
+  .ask .why{color:var(--pencil); font-size:.94rem}
+
+  /* зоны ответственности */
+  .zones{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+  @media (max-width:700px){ .zones{grid-template-columns:1fr} }
+  .zone{border:1px solid var(--edge); padding:18px 20px; display:flex; flex-direction:column; gap:10px}
+  .zone.theirs{border-color:var(--ink); border-left-width:3px}
+  .zone p{margin:0; font-size:.94rem; color:var(--pencil)}
+  .zone ul{gap:6px; font-size:.96rem}
+
+  /* таблицы */
+  .scroll{overflow-x:auto}
+  table{width:100%; border-collapse:collapse; font-size:.94rem}
+  table.wide{min-width:560px}
+  th{
+    text-align:left; font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.7rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--pencil); font-weight:400;
+    padding:0 16px 8px 0; border-bottom:1px solid var(--edge);
+  }
+  td{padding:9px 16px 9px 0; border-bottom:1px solid var(--edge); vertical-align:top}
+  td:last-child{padding-right:0}
+  tr:last-child td{border-bottom:0}
+  td.k{font-family:"PT Mono",ui-monospace,monospace; font-size:.84rem; color:var(--text); white-space:nowrap}
+
+  /* чек-лист безопасности */
+  ul.sec{list-style:none; padding-left:0; gap:13px}
+  ul.sec li{display:grid; grid-template-columns:20px 1fr; gap:11px}
+  ul.sec li::before{
+    content:"✗"; color:var(--red);
+    font-family:"PT Serif",Georgia,serif; font-size:1.1rem; line-height:1.3;
+  }
+  ul.sec b{display:block}
+  ul.sec .why{color:var(--pencil); font-size:.93rem}
+
+  /* критерии приёмки */
+  ol.ac{counter-reset:c; list-style:none; padding-left:0; gap:10px}
+  ol.ac li{counter-increment:c; position:relative; padding-left:32px; font-size:.96rem}
+  ol.ac li::before{
+    content:"AC" counter(c);
+    position:absolute; left:0; top:3px;
+    font-family:"PT Mono",ui-monospace,monospace; font-size:.66rem;
+    color:var(--pencil);
+  }
+
+  /* открытые вопросы */
+  ul.open{list-style:none; padding-left:0; gap:13px}
+  ul.open b{display:block}
+  ul.open .note{color:var(--pencil); font-size:.94rem}
+  .chip{
+    display:inline-block;
+    font-family:"PT Mono",ui-monospace,monospace;
+    font-size:.66rem; letter-spacing:.06em; text-transform:uppercase;
+    border:1px solid var(--pencil); color:var(--pencil);
+    padding:1px 7px; margin-left:8px; vertical-align:2px; white-space:nowrap;
+  }
+  .chip.you{border-color:var(--ink); color:var(--ink)}
+  .chip.me{border-color:var(--red); color:var(--red)}
+
+  .note-box{
+    border-left:3px solid var(--red);
+    background:var(--red-wash);
+    padding:14px 16px; font-size:.95rem;
+  }
+  .note-box p{max-width:66ch}
+  a{color:var(--ink)}
+  a:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+</style>
+
+<main class="sheet">
+  <div class="stack">
+
+    <header>
+      <div class="stamp">03 · для разработчиков · v1</div>
+      <h1>Техспека сбора фидбека</h1>
+      <p class="deck">Внутренний сервис: сотрудник оставляет фидбек по новому план-факту, админы читают
+      и выгружают. 300+ пользователей, только внутри контура. Документ на один разговор: что решено
+      продуктово, что решаете вы, где нужен ваш ответ до начала работы.</p>
+    </header>
+
+    <section class="ask">
+      <h2>Что нужно от вас на этой встрече</h2>
+      <ol>
+        <li>
+          <b>Стек и место для базы.</b>
+          <span class="why">Предложение — TypeScript / React / Next.js и PostgreSQL. Если у вас принят
+          другой фреймворк или есть общий кластер Postgres, куда положено ходить новым сервисам, —
+          говорите, меняем. Всё остальное в этом документе смену стека переживает.</span>
+        </li>
+        <li>
+          <b>Что стоит на входе в контур и что оно передаёт приложению.</b>
+          <span class="why">Своей аутентификации не делаем — берём личность из контура. Нужно знать:
+          продукт (oauth2-proxy, Authelia, Authentik, Keycloak, Cloudflare Access, Azure AD App Proxy,
+          свой nginx с <code>auth_request</code>), заголовок с почтой и его формат, есть ли подписанный
+          JWT вместо голого заголовка, перезаписывает ли прокси заголовок на входящих запросах,
+          можно ли закрыть приложение от прямого доступа.</span>
+        </li>
+        <li>
+          <b>Куда деплоим и кто делает ревью.</b>
+          <span class="why">Нужен адрес внутри контура, способ доставки и имя человека, который посмотрит
+          код, — со сроком. Дальше тестировщики, дальше прод.</span>
+        </li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Зоны решений</h2>
+      <div class="zones">
+        <div class="zone theirs">
+          <h3>Решаете вы</h3>
+          <ul>
+            <li>Фреймворк и язык</li>
+            <li>Где живёт PostgreSQL: свой контейнер или общий кластер</li>
+            <li>Как собирается и доставляется образ, где хранятся секреты</li>
+            <li>Какой SSO-шлюз даёт личность и в каком виде</li>
+            <li>Где лежит том с файлами и как он бэкапится</li>
+            <li>CI, линтеры, структура репозитория</li>
+          </ul>
+        </div>
+        <div class="zone">
+          <h3>Решено продуктово</h3>
+          <ul>
+            <li>Граница первой версии</li>
+            <li>Смысл схемы данных: что храним и что не храним</li>
+            <li>Восемь критериев приёмки</li>
+            <li>Обязательные проверки безопасности</li>
+            <li>Разделы и админы — в конфиге, без редактора в интерфейсе</li>
+            <li>Файлы и база не покидают инфраструктуру компании</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:16px">Если что-то из правой колонки технически невозможно или дорого —
+      это разговор, а не отказ. Но менять её содержимое «потому что удобнее реализовать» не нужно:
+      за каждым пунктом стоит причина, и её можно спросить.</p>
+    </section>
+
+    <section>
+      <h2>Граница первой версии</h2>
+      <div class="scroll">
+        <table class="wide">
+          <thead><tr><th>Делаем</th><th>Не делаем в v1</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Форма фидбека: раздел, текст, до 3 скриншотов</td>
+              <td>Статусы и теги обработки</td>
+            </tr>
+            <tr>
+              <td>Кабинет админа: список, фильтры, карточка</td>
+              <td>Комментарии команды, дашборд аналитики</td>
+            </tr>
+            <tr>
+              <td>Экспорт текущей выборки в CSV</td>
+              <td>Редактор разделов в админке</td>
+            </tr>
+            <tr>
+              <td>Отказ с понятной причиной для чужих</td>
+              <td>«Свои обращения» для рядового пользователя, встраиваемый виджет, уведомления</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:16px"><b>Порог успеха:</b> через месяц после релиза из собранного фидбека
+      собирается топ-5 проблем и уходит в спринт. Не собрался — меняем подход, а не достраиваем.
+      Это и есть причина, по которой правая колонка такая длинная: всё, что не работает на этот порог,
+      ждёт следующего захода.</p>
+    </section>
+
+    <section>
+      <h2>Схема данных</h2>
+      <div class="scroll">
+        <table class="wide">
+          <thead><tr><th>feedback</th><th>Смысл</th></tr></thead>
+          <tbody>
+            <tr><td class="k">id</td><td>PK</td></tr>
+            <tr><td class="k">author_email</td><td>Только из результата <code>getCurrentUser()</code>, не из запроса клиента</td></tr>
+            <tr><td class="k">section</td><td>Значение из списка в конфиге; валидируется на сервере</td></tr>
+            <tr><td class="k">text</td><td>Не короче 10 символов</td></tr>
+            <tr><td class="k">created_at</td><td>Сортировка в кабинете — по нему, свежие сверху</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="scroll" style="margin-top:18px">
+        <table class="wide">
+          <thead><tr><th>attachment</th><th>Смысл</th></tr></thead>
+          <tbody>
+            <tr><td class="k">id</td><td>PK</td></tr>
+            <tr><td class="k">feedback_id</td><td>FK на feedback</td></tr>
+            <tr><td class="k">filename</td><td>Имя от пользователя — только для показа, никогда как путь</td></tr>
+            <tr><td class="k">mime</td><td>image/png, image/jpeg; определяется на сервере</td></tr>
+            <tr><td class="k">size</td><td>До 5 МБ, до 3 файлов на запись</td></tr>
+            <tr><td class="k">path</td><td>Путь в томе <code>uploads/</code>; сами файлы в базу не кладём</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:16px">Разделы и список админов — в <code>config/app.ts</code>, правятся кодом
+      и деплоем. Это осознанно: редактор разделов и система ролей не влияют на порог успеха.</p>
+    </section>
+
+    <section>
+      <h2>Аутентификация: один адаптер, три режима</h2>
+      <p>Сотрудник приходит по ссылке из план-факта, уже войдя в контуре. Второго логина быть не должно.
+      Источник личности спрятан за одну функцию <code>getCurrentUser(): { email } | null</code>,
+      реализация выбирается флагом <code>AUTH_MODE</code>. Остальной код о ней не знает.</p>
+      <div class="scroll">
+        <table class="wide">
+          <thead><tr><th>AUTH_MODE</th><th>Что делает</th><th>Условие корректности</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="k">proxy</td>
+              <td>Личность от SSO-шлюза: подписанный JWT (проверка по JWKS) либо заголовок с почтой</td>
+              <td>Для JWT — проверенная подпись. Для голого заголовка — приложение недоступно в обход
+              прокси <b>и</b> прокси перезаписывает заголовок</td>
+            </tr>
+            <tr>
+              <td class="k">google</td>
+              <td>Свой Google OAuth через Auth.js, сессия в httpOnly-cookie</td>
+              <td>Silent SSO: <code>hd</code>, <code>login_hint</code>, без <code>prompt=consent</code>,
+              приложение доверенное в Workspace — иначе появляется лишний экран</td>
+            </tr>
+            <tr>
+              <td class="k">dev</td>
+              <td>Почта из <code>DEV_USER_EMAIL</code> для локального запуска</td>
+              <td>При <code>NODE_ENV=production</code> приложение обязано не подняться</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note-box" style="margin-top:18px">
+        <p><b>Отвергнутые варианты, чтобы не предлагать заново.</b> Чтение cookie план-факта —
+        чужой домен и чужой секрет сессий, их ротация ломает наш вход. Токен в query-параметре —
+        утечка в историю браузера, <code>Referer</code>, логи и скриншоты. Доверие почте из параметра
+        или поля формы — фидбек от имени руководителя в одну команду. Подписанные тикеты от команды
+        план-факта — схема корректная, но это их релиз внутри нашего срока; держим как резерв.</p>
+        <p style="margin-bottom:0">Из план-факта в ссылке принимаем только безопасный контекст:
+        <code>?section=</code> (сверяется со списком) и <code>?from=</code>.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Обязательные проверки — чек-лист для код-ревью</h2>
+      <ul class="sec">
+        <li><div>
+          <b>Почте из заголовка верим только при выполненном условии</b>
+          <span class="why">Проверенная подпись либо изоляция от прямого доступа плюс перезапись
+          заголовка прокси. Без одного из двух подделка проходит: домен в ней наш.</span>
+        </div></li>
+        <li><div>
+          <b>Почта берётся только из <code>getCurrentUser()</code></b>
+          <span class="why">Ни query-параметр, ни поле формы, ни присланный клиентом токен.</span>
+        </div></li>
+        <li><div>
+          <b>Домен почты проверяется на сервере</b>
+          <span class="why">Шлюз пускает в контур подрядчиков и гостей: «прошёл шлюз» не равно «наш сотрудник».</span>
+        </div></li>
+        <li><div>
+          <b>Список админов проверяется при каждом запросе — и к странице, и к API кабинета</b>
+          <span class="why">Не однократно при входе, иначе достаточно знать адрес запроса.</span>
+        </div></li>
+        <li><div>
+          <b>Тип и размер файла проверяются на сервере; имя от пользователя не используется как путь</b>
+          <span class="why">Ожидаем попытки вида <code>../../config/app.ts</code>.</span>
+        </div></li>
+        <li><div>
+          <b>Файлы отдаются своим обработчиком с проверкой прав, не как статика</b>
+          <span class="why">Иначе прямая ссылка на скриншот из чужого фидбека работает у любого.</span>
+        </div></li>
+        <li><div>
+          <b>Тома объявлены: база и <code>uploads/</code> живут снаружи контейнера</b>
+          <span class="why">Без этого первый же деплой обнуляет данные. Это AC7.</span>
+        </div></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Критерии приёмки</h2>
+      <p>Заморожены до релиза. По ним же пойдут тестировщики.</p>
+      <ol class="ac">
+        <li>Сотрудник с корпоративной почтой выбирает раздел, пишет текст, отправляет — запись сохраняется с email, разделом, текстом и датой; подтверждение быстрее 3 секунд.</li>
+        <li>Отправка без раздела или с текстом короче 10 символов не проходит: форма говорит, что не так, введённый текст не теряется.</li>
+        <li>Пользователь не с корпоративного домена не может ни отправить фидбек, ни попасть в кабинет — видит явный отказ, а не пустой экран.</li>
+        <li>Админ из списка видит в кабинете все записи, свежие сверху, с email, разделом, текстом и датой. Сотрудник не из списка получает отказ.</li>
+        <li>Админ фильтрует по разделу, периоду дат и слову в тексте; видно, сколько записей попало под фильтр.</li>
+        <li>Админ выгружает текущую выборку в CSV; файл открывается в Excel без битой кириллицы и содержит ровно те записи, что были на экране.</li>
+        <li>После перезапуска сервиса все записи и файлы на месте.</li>
+        <li>К фидбеку прикладывается до 3 файлов PNG/JPG до 5 МБ каждый; админ открывает их из карточки. Файл сверх лимита отклоняется с понятным сообщением, текст фидбека не теряется.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Открытые вопросы</h2>
+      <ul class="open">
+        <li>
+          <b>Список разделов план-факта<span class="chip me">за продуктом</span></b>
+          <span class="note">В конфиге пока заглушка. Значения нужны от заказчика; на код влияют одной строкой.</span>
+        </li>
+        <li>
+          <b>Корпоративный домен для проверки почты<span class="chip me">за продуктом</span></b>
+          <span class="note">Уточняется.</span>
+        </li>
+        <li>
+          <b>Что стоит на входе в контур и что передаёт приложению<span class="chip you">за вами</span></b>
+          <span class="note">Пять подвопросов — во втором пункте раздела «Что нужно от вас».
+          До ответа код пишется против <code>getCurrentUser()</code>, поэтому это не блокер.</span>
+        </li>
+        <li>
+          <b>Адрес деплоя внутри контура и хранение секретов<span class="chip you">за вами</span></b>
+          <span class="note">Нужно до первого запуска, не до первой строки кода.</span>
+        </li>
+        <li>
+          <b>Где живёт PostgreSQL: свой контейнер или общий кластер<span class="chip you">за вами</span></b>
+          <span class="note">Меняет <code>docker-compose</code>, но не схему и не код доступа к данным.</span>
+        </li>
+      </ul>
+    </section>
+
+  </div>
+</main>
