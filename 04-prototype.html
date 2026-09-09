@@ -1,0 +1,1079 @@
+<title>Plan vs Fact Feedback</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ground:#f2f4f6; --surface:#ffffff; --surface-2:#eaedf1;
+  --line:#d5dae1; --line-soft:#e5e9ee;
+  --ink:#14202c; --ink-2:#4a5a6b; --ink-3:#77879a;
+  --accent:#0f6f74; --accent-soft:#dceceb; --accent-ink:#0a5155;
+  --danger:#a52f30; --danger-soft:#f7e3e2;
+  --warn:#8a5a12; --warn-soft:#f7ecd8;
+  --ok:#1f6b45; --ok-soft:#dbeee3;
+  --chrome:#1b2733; --chrome-ink:#c8d4de;
+  --font-sans:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-serif:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --font-mono:"Montserrat",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --radius:6px;
+  --shadow:0 1px 2px rgba(20,32,44,.06), 0 8px 24px rgba(20,32,44,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0e161e; --surface:#16202b; --surface-2:#1d2935;
+    --line:#2b3a48; --line-soft:#233140;
+    --ink:#e5ecf2; --ink-2:#a3b2c0; --ink-3:#7b8b9b;
+    --accent:#4bb3b3; --accent-soft:#143133; --accent-ink:#7fd0cf;
+    --danger:#e08886; --danger-soft:#3a2020;
+    --warn:#dcae62; --warn-soft:#372a15;
+    --ok:#7cc79b; --ok-soft:#152e21;
+    --chrome:#080d12; --chrome-ink:#93a3b1;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0e161e; --surface:#16202b; --surface-2:#1d2935;
+  --line:#2b3a48; --line-soft:#233140;
+  --ink:#e5ecf2; --ink-2:#a3b2c0; --ink-3:#7b8b9b;
+  --accent:#4bb3b3; --accent-soft:#143133; --accent-ink:#7fd0cf;
+  --danger:#e08886; --danger-soft:#3a2020;
+  --warn:#dcae62; --warn-soft:#372a15;
+  --ok:#7cc79b; --ok-soft:#152e21;
+  --chrome:#080d12; --chrome-ink:#93a3b1;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+h1,h2,h3{letter-spacing:-.015em}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--font-sans);font-size:15px;line-height:1.5}
+button,input,select,textarea,dialog,optgroup,option{font-family:var(--font-sans);color:inherit}
+button,input,select,textarea{font-size:inherit;line-height:inherit}
+.mono,pre,code,kbd{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* prototype shell */
+.shell{background:var(--chrome);color:var(--chrome-ink);border-bottom:1px solid rgba(255,255,255,.08)}
+.shell-in{max-width:1180px;margin:0 auto;padding:14px 20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.shell-title{font-family:var(--font-serif);font-weight:600;font-size:16px;color:#fff;margin:0}
+.shell-note{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:#8b9dad}
+.roles{display:flex;margin-left:auto;border:1px solid rgba(255,255,255,.18);border-radius:var(--radius);overflow:hidden}
+.roles button{background:transparent;border:0;color:#b9c7d3;padding:8px 18px;cursor:pointer;font-weight:500}
+.roles button+button{border-left:1px solid rgba(255,255,255,.18)}
+.roles button[aria-pressed="true"]{background:#fff;color:#14202c}
+.shell-bar{background:var(--surface-2);border-bottom:1px solid var(--line)}
+.shell-bar-in{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.shell-bar .lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.scen{display:flex;flex-wrap:wrap;gap:6px}
+.scen button{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 12px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.scen button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink);font-weight:500}
+
+main{max-width:1180px;margin:0 auto;padding:26px 20px 64px}
+
+/* shared */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.appbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+.appbar h1{margin:0;font-family:var(--font-serif);font-size:20px;font-weight:600}
+.appbar .who{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);flex-wrap:wrap}
+.badge{font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--accent-soft);color:var(--accent-ink)}
+.hint{color:var(--ink-3);font-size:13px}
+.pad{padding:20px}
+
+/* form */
+form{display:flex;flex-direction:column;gap:22px;max-width:660px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field>label{font-weight:500}
+select,textarea,input[type="text"],input[type="email"],input[type="date"]{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:9px 11px;width:100%}
+select:focus-visible,textarea:focus-visible,input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+textarea{min-height:140px;resize:vertical;line-height:1.55}
+.field.bad select,.field.bad textarea{border-color:var(--danger);background:var(--danger-soft)}
+.err{display:flex;gap:7px;align-items:flex-start;color:var(--danger);font-size:13.5px;margin:0}
+.err::before{content:"—";font-family:var(--font-mono)}
+.ok-line{display:flex;gap:7px;color:var(--ok);font-size:13.5px;margin:0}
+.counter{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);align-self:flex-end}
+.counter.bad{color:var(--danger)}
+.drop{border:1px dashed var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface-2)}
+.drop.hot{border-color:var(--accent);background:var(--accent-soft)}
+.kbd{font-family:var(--font-mono);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:var(--surface);white-space:nowrap}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:var(--radius);padding:10px 20px;font-weight:500;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:8px 14px;cursor:pointer}
+.btn-ghost:disabled{opacity:.5;cursor:not-allowed}
+.btn-link{background:none;border:0;color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
+.files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.files li{display:flex;gap:10px;align-items:center;font-size:13.5px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:6px 10px}
+.files .thumb{width:44px;height:30px;border:1px solid var(--line);border-radius:3px;object-fit:cover;background:var(--surface);flex:0 0 auto}
+.files .thumb svg{display:block;width:100%;height:100%}
+.files .fname{font-family:var(--font-mono);overflow-wrap:anywhere}
+.files .fsize{color:var(--ink-3);font-family:var(--font-mono);margin-left:auto;white-space:nowrap}
+.submitrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+
+/* submitted */
+.done{display:flex;flex-direction:column;gap:14px;align-items:flex-start;max-width:600px}
+.done .tick{width:38px;height:38px;border-radius:50%;background:var(--ok-soft);color:var(--ok);display:grid;place-items:center;font-size:19px}
+.done h2{margin:0;font-family:var(--font-serif);font-size:19px}
+.recap{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px;width:100%}
+.recap dt{color:var(--ink-3)}
+.recap dd{margin:0}
+
+/* refusal */
+.deny{max-width:600px;display:flex;flex-direction:column;gap:12px}
+.deny .mark{width:38px;height:38px;border-radius:50%;background:var(--danger-soft);color:var(--danger);display:grid;place-items:center;font-size:20px}
+.deny h2{margin:0;font-family:var(--font-serif);font-size:19px}
+
+/* inbox: per-section counts */
+.tally{padding:16px 20px;border-bottom:1px solid var(--line-soft);display:flex;flex-direction:column;gap:12px}
+.tally-head{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.tally-head .lbl{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.tally-head .total{margin-left:auto;font-family:var(--font-mono);font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.tally-head .total b{color:var(--ink)}
+.tgroups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.tgroup{display:flex;flex-direction:column;gap:7px;min-width:0}
+.tgroup h3{margin:0;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:.02em}
+.tchips{display:flex;flex-wrap:wrap;gap:6px}
+.tchip{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);
+  border-radius:99px;padding:4px 6px 4px 11px;font-size:13px;color:var(--ink);cursor:pointer;line-height:1.35}
+.tchip .n{font-family:var(--font-mono);font-size:12px;font-variant-numeric:tabular-nums;min-width:20px;text-align:center;
+  background:var(--surface-2);border-radius:99px;padding:1px 6px;color:var(--ink-2)}
+.tchip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink);font-weight:500}
+.tchip[aria-pressed="true"] .n{background:var(--accent);color:#fff}
+.tchip.zero{color:var(--ink-3);border-style:dashed;cursor:default}
+.tchip.zero .n{color:var(--ink-3)}
+.tchip.lead .n{background:var(--warn-soft);color:var(--warn);font-weight:600}
+
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:16px 20px;background:var(--surface-2);border-bottom:1px solid var(--line-soft)}
+.filters .f{display:flex;flex-direction:column;gap:4px}
+.filters .f label,.colhead span{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line-soft)}
+.found{font-family:var(--font-mono);font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.found b{color:var(--ink);font-weight:600}
+.tools .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.rows{display:grid;grid-template-columns:200px minmax(280px,1fr) 190px 120px}
+.colhead{display:grid;grid-template-columns:subgrid;grid-column:1 / -1;padding:8px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);position:sticky;top:0}
+.row{display:grid;grid-template-columns:subgrid;grid-column:1 / -1;padding:14px 20px;border-bottom:1px solid var(--line-soft);gap:0 18px;align-items:start}
+.row:last-child{border-bottom:0}
+.row:nth-child(even of .row){background:color-mix(in srgb, var(--surface-2) 45%, transparent)}
+.c-section{display:flex;flex-direction:column;gap:3px}
+.c-section .grp{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.c-section .name{font-weight:500;font-size:14px}
+.c-text{display:flex;flex-direction:column;gap:8px}
+.c-text p{margin:0}
+.c-text .id{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3)}
+.c-author{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere}
+.c-date{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.c-date .t{color:var(--ink-3)}
+.shots{display:flex;gap:8px;flex-wrap:wrap}
+.shot{border:1px solid var(--line);border-radius:4px;padding:0;background:var(--surface-2);cursor:pointer;line-height:0}
+.shot svg{display:block;width:92px;height:62px}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
+.scroller{overflow-x:auto}
+@media (max-width:860px){
+  .rows{grid-template-columns:1fr}
+  .colhead{display:none}
+  .row{gap:8px 0}
+  .c-date,.c-author{font-size:12px}
+}
+
+/* dialogs */
+dialog{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);color:var(--ink);padding:0;max-width:min(760px,92vw);box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(10,18,26,.55)}
+.dlg-head{display:flex;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line-soft)}
+.dlg-head h3{margin:0;font-size:15px;font-weight:600}
+.dlg-head .x{margin-left:auto}
+.dlg-body{padding:18px;display:flex;flex-direction:column;gap:14px}
+pre.csv{margin:0;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:12px;overflow-x:auto;font-family:var(--font-mono);font-size:12.5px;line-height:1.6}
+.pick{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pick button{width:100%;display:flex;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;cursor:pointer}
+.pick .fsize{margin-left:auto;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
+.pick .tag{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:3px;background:var(--warn-soft);color:var(--warn)}
+.lightbox svg,.lightbox img{display:block;width:min(680px,88vw);height:auto;border-radius:4px}
+.admins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.admins li{display:flex;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:7px 11px;font-size:13.5px}
+.admins .mail{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere}
+.admins .you{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.addrow input{flex:1 1 260px}
+.exp{display:flex;gap:10px;flex-wrap:wrap}
+
+/* dev & QA section (Russian) */
+.dev{display:flex;flex-direction:column;gap:0}
+.dev .block{padding:20px;border-bottom:1px solid var(--line-soft)}
+.dev .block:last-child{border-bottom:0}
+.dev h2{margin:0 0 4px;font-size:16px;font-weight:600}
+.dev h2+.sub{margin:0 0 14px;color:var(--ink-3);font-size:13px;max-width:74ch}
+.dev h3{margin:0 0 8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.diagram{overflow-x:auto;border:1px solid var(--line-soft);border-radius:var(--radius);background:var(--surface-2);padding:12px}
+.diagram svg{display:block;min-width:940px;width:100%;height:auto}
+.diagram svg text{font-family:var(--font-sans)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:22px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tbl th,table.tbl td{text-align:left;vertical-align:top;padding:7px 10px;border-bottom:1px solid var(--line-soft)}
+table.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500;white-space:nowrap}
+table.tbl td.k{white-space:nowrap;font-weight:500}
+table.tbl tr:last-child td{border-bottom:0}
+.tag2{display:inline-block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.tag2.dev{background:var(--accent-soft);color:var(--accent-ink)}
+.tag2.prod{background:var(--warn-soft);color:var(--warn)}
+.tag2.risk{background:var(--danger-soft);color:var(--danger)}
+ol.chk,ul.plain{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:7px;font-size:13.5px}
+ol.chk b{font-weight:600}
+.qa{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.qa li{display:grid;grid-template-columns:78px 1fr;gap:12px;font-size:13.5px;padding-bottom:8px;border-bottom:1px solid var(--line-soft)}
+.qa li:last-child{border-bottom:0;padding-bottom:0}
+.qa .ac{margin:0;border:0;padding:0;background:none;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-ink);font-weight:600}
+.open{display:flex;flex-direction:column;gap:8px}
+.open div{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;font-size:13.5px;padding-bottom:8px;border-bottom:1px solid var(--line-soft)}
+.open div:last-child{border-bottom:0;padding-bottom:0}
+
+/* what-this-proves note */
+.ac{margin-top:18px;border-left:2px solid var(--accent);background:var(--surface);padding:12px 16px;border-radius:0 var(--radius) var(--radius) 0}
+.ac h3{margin:0 0 6px;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.ac ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
+@media (prefers-reduced-motion:no-preference){
+  .fade{animation:fade .18s ease-out}
+  @keyframes fade{from{opacity:.4}to{opacity:1}}
+}
+</style>
+
+<header class="shell">
+  <div class="shell-in">
+    <h1 class="shell-title">Plan vs Fact Feedback</h1>
+    <span class="shell-note">prototype · mock data</span>
+    <div class="roles" role="group" aria-label="Role">
+      <button id="r-user" aria-pressed="true">User · form</button>
+      <button id="r-admin" aria-pressed="false">Admin · inbox</button>
+      <button id="r-dev" aria-pressed="false">Для разработки</button>
+    </div>
+  </div>
+</header>
+<div class="shell-bar">
+  <div class="shell-bar-in">
+    <span class="lbl">Scenario</span>
+    <div class="scen" id="scen"></div>
+  </div>
+</div>
+
+<main id="app"></main>
+
+<dialog id="dlg-pick">
+  <div class="dlg-head"><h3>Pick a file</h3><button class="btn-ghost x" data-close>Close</button></div>
+  <div class="dlg-body">
+    <p class="hint" style="margin:0">The prototype offers prepared files instead of the system dialog. The last one is deliberately over 5 MB.</p>
+    <ul class="pick" id="pick-list"></ul>
+  </div>
+</dialog>
+
+<dialog id="dlg-exp">
+  <div class="dlg-head"><h3>Export</h3><button class="btn-ghost x" data-close>Close</button></div>
+  <div class="dlg-body">
+    <p class="hint" style="margin:0" id="exp-note"></p>
+    <div class="exp">
+      <button class="btn" id="dl-xlsx">Excel (.xlsx)</button>
+      <button class="btn-ghost" id="dl-csv">CSV (.csv)</button>
+    </div>
+    <p class="hint" style="margin:0">Excel comes as a ready table with headers, column widths and an autofilter. CSV is UTF-8 with BOM so Excel keeps non-Latin text intact. First lines of the file below.</p>
+    <pre class="csv" id="exp-body"></pre>
+  </div>
+</dialog>
+
+<dialog id="dlg-admins">
+  <div class="dlg-head"><h3>Inbox admins</h3><button class="btn-ghost x" data-close>Close</button></div>
+  <div class="dlg-body">
+    <p class="hint" style="margin:0">Who can open the inbox and export data. The address must be on the corporate domain <span class="mono">@emergingtravel.com</span>.</p>
+    <ul class="admins" id="admin-list"></ul>
+    <div class="addrow">
+      <input type="email" id="admin-email" placeholder="new admin email" autocomplete="off">
+      <button class="btn" id="admin-add">Add</button>
+    </div>
+    <p id="admin-msg" style="margin:0"></p>
+  </div>
+</dialog>
+
+<dialog id="dlg-shot" class="lightbox">
+  <div class="dlg-head"><h3 id="shot-name">screenshot.png</h3><button class="btn-ghost x" data-close>Close</button></div>
+  <div class="dlg-body" id="shot-body"></div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* ── sections of the plan-vs-fact tool; "Filters" exists in both groups, hence ids ── */
+const SECTIONS = [
+  {id:"ov-widget",   group:"Overview page", name:"Widget"},
+  {id:"ov-graph",    group:"Overview page", name:"Graph"},
+  {id:"ov-tmenu",    group:"Overview page", name:"Teams menu"},
+  {id:"ov-tdata",    group:"Overview page", name:"Teams data"},
+  {id:"ov-export",   group:"Overview page", name:"Export"},
+  {id:"ov-filters",  group:"Overview page", name:"Filters"},
+  {id:"po-list",     group:"Position page", name:"Positions list"},
+  {id:"po-filters",  group:"Position page", name:"Filters"},
+  {id:"po-planning", group:"Position page", name:"Planning"},
+  {id:"po-changes",  group:"Position page", name:"Position changes"},
+  {id:"po-search",   group:"Position page", name:"Search"},
+  {id:"po-create",   group:"Position page", name:"Creating new position"},
+  {id:"po-edit-open",group:"Position page", name:"Edit open position"},
+  {id:"po-edit-clos",group:"Position page", name:"Edit closed position"},
+  {id:"po-raise",    group:"Position page", name:"Raise"},
+  {id:"po-widget",   group:"Position page", name:"Planning widget"},
+  {id:"other",       group:"Other",         name:"Other feedback"}
+];
+const SEC = Object.fromEntries(SECTIONS.map(s=>[s.id,s]));
+const secLabel = id => !SEC[id] ? id
+  : SEC[id].group === "Other" ? SEC[id].name
+  : `${SEC[id].group.replace(" page","")} · ${SEC[id].name}`;
+const GROUPS = ["Overview page","Position page"];
+
+const ME = "dmitriy.kovalev@emergingtravel.com";
+const DOMAIN = "@emergingtravel.com";
+
+let ADMINS = [
+  {email:"dmitriy.kovalev@emergingtravel.com", added:"from config"},
+  {email:"anton.grishin@emergingtravel.com",   added:"from config"},
+  {email:"natalia.zaytseva@emergingtravel.com",added:"2026-09-10 by dmitriy.kovalev"}
+];
+
+/* ── mock feedback ── */
+const FEED = [
+  {id:412, email:"marina.eremina@emergingtravel.com", section:"po-planning", at:"2026-09-10 11:42",
+   text:"Copying planning to the next period breaks part-time positions: they come over as full-time. I fix 30 rows by hand every time.",
+   shots:["planning-copy.png","after-copy.png"]},
+  {id:411, email:"anton.grishin@emergingtravel.com", section:"ov-export", at:"2026-09-10 10:15",
+   text:"A quarterly export from Overview takes 4 minutes and often dies on a timeout. Either show progress or email me the file.", shots:[]},
+  {id:410, email:"olga.pavlova@emergingtravel.com", section:"ov-graph", at:"2026-09-10 09:58",
+   text:"The graph has no axis label for FTE, and plan and fact are drawn in the same colour, so I cannot tell them apart. A legend and two colours would fix it.",
+   shots:["graph-legend.png"]},
+  {id:409, email:"sergey.kim@emergingtravel.com", section:"po-edit-clos", at:"2026-09-09 18:30",
+   text:"I was able to edit and save a closed position, and the closing date moved into last month. Screenshot of the form attached.",
+   shots:["edit-closed.png"]},
+  {id:408, email:"marina.eremina@emergingtravel.com", section:"ov-widget", at:"2026-09-09 16:04",
+   text:"The Overview widget shows yesterday's numbers with no note about when it was refreshed. Twice already I made a call on stale data.",
+   shots:["widget-stale.png"]},
+  {id:407, email:"ivan.d.orlov@emergingtravel.com", section:"po-search", at:"2026-09-09 14:21",
+   text:"Search tolerates no typos and does not match position codes, only the full title. Anything but an exact match returns nothing.", shots:[]},
+  {id:406, email:"natalia.zaytseva@emergingtravel.com", section:"po-widget", at:"2026-09-08 12:47",
+   text:"The planning widget gives no warning when I go over budget. I only learn about it from the month-end report.",
+   shots:["planning-widget-budget.png"]},
+  {id:405, email:"pavel.hlebnikov@emergingtravel.com", section:"ov-export", at:"2026-09-08 11:03",
+   text:"Dates arrive as text in the export, so Excel will not calculate on them. I reformat the column by hand every single time.",
+   shots:["excel-dates.png"]},
+  {id:404, email:"olga.pavlova@emergingtravel.com", section:"po-raise", at:"2026-09-05 17:52",
+   text:"A raise stalls when the manager is on leave: the deputy is never notified. We need approval to hand over for the absence.", shots:[]},
+  {id:403, email:"sergey.kim@emergingtravel.com", section:"po-list", at:"2026-09-05 10:09",
+   text:"The positions list freezes past 50 rows and the scroll jumps. My unit has 180 positions, so the page is unusable.",
+   shots:["positions-list-lag.png"]},
+  {id:402, email:"anton.grishin@emergingtravel.com", section:"ov-filters", at:"2026-09-04 19:26",
+   text:"Overview filters reset when I open a position and come back. I rebuild the same selection every time.", shots:[]},
+  {id:401, email:"natalia.zaytseva@emergingtravel.com", section:"po-create", at:"2026-09-03 08:41",
+   text:"Creating a position marks a field required that in our process the finance director fills in later. So I type “TBC” to get past it.",
+   shots:["create-position.png"]},
+  {id:400, email:"ivan.d.orlov@emergingtravel.com", section:"ov-tdata", at:"2026-09-02 15:12",
+   text:"Teams data mixes disbanded teams in with live ones and marks neither. Reports built on it never reconcile.",
+   shots:["teams-data.png"]},
+  {id:399, email:"pavel.hlebnikov@emergingtravel.com", section:"ov-tmenu", at:"2026-09-01 09:40",
+   text:"The teams menu has no search and we have over 40 teams. I scan the whole list by eye every time.", shots:[]},
+  {id:398, email:"olga.pavlova@emergingtravel.com", section:"po-changes", at:"2026-08-31 17:05",
+   text:"Position history does not show who changed an FTE value, only the date and the new number. For disputes we need the author.",
+   shots:["position-changes.png"]},
+  {id:397, email:"marina.eremina@emergingtravel.com", section:"po-edit-open", at:"2026-08-28 13:33",
+   text:"Editing an open position silently drops my comment if it runs longer than a couple of lines.", shots:[]},
+  {id:396, email:"anton.grishin@emergingtravel.com", section:"other", at:"2026-08-27 16:20",
+   text:"After signing out, the browser back button still shows the previous page with data on it. Feels unsafe, even if it belongs to no section.",
+   shots:["logout-back.png"]},
+  {id:395, email:"ivan.d.orlov@emergingtravel.com", section:"other", at:"2026-08-26 10:48",
+   text:"We are missing onboarding material: half the team cannot tell plan from forecast. A short video would settle it.", shots:[]}
+];
+
+const PICKABLE = [
+  {name:"error-screen.png", size:412000},
+  {name:"planning-widget.jpg", size:1840000},
+  {name:"excel-export.png", size:2300000},
+  {name:"screen-recording.png", size:7600000, tooBig:true}
+];
+
+const SCENARIOS = {
+  user:[{id:"blank",label:"Empty form"},{id:"filled",label:"Filled in"},{id:"errors",label:"Validation errors"},
+        {id:"pasted",label:"Pasted screenshot"},{id:"sent",label:"Submitted"},{id:"deny",label:"Denied: outside domain"}],
+  admin:[{id:"list",label:"Feedback list"},{id:"filtered",label:"Filter applied"},{id:"bysection",label:"Sorted by section"},
+         {id:"nothing",label:"Nothing found"},{id:"deny",label:"Denied: not an admin"}],
+  dev:[]
+};
+
+const state = {
+  role:"user", scenario:"blank",
+  form:{section:"", text:"", files:[], errors:{}, note:"", sentAt:null, ticket:413},
+  filters:{section:"", from:"", to:"", q:""},
+  sort:"date-desc"
+};
+
+const fmtSize = b => b >= 1048576 ? (b/1048576).toFixed(1)+" MB" : Math.round(b/1024)+" KB";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* a fake screenshot, deterministic from the file name */
+function shotSVG(name, big){
+  let h = 0; for (const ch of name) h = (h*31 + ch.charCodeAt(0)) & 0xffff;
+  const rows = 5 + (h % 4), markRow = h % rows, w = 320, rowH = 16;
+  let body = "";
+  for (let i=0;i<rows;i++){
+    const y = 46 + i*(rowH+6); let x = 14;
+    [0.28,0.18,0.22,0.14].forEach((c,j)=>{
+      const cw = (w-28)*c - 8, mark = i===markRow && j===((h>>3)%4);
+      body += `<rect x="${x}" y="${y}" width="${cw}" height="${rowH-4}" rx="2" fill="${mark?"#c0413f":"#b9c4cf"}" opacity="${mark?"0.85":(0.35+((h>>j)%3)*0.15)}"/>`;
+      x += cw + 8;
+    });
+    if (i===markRow) body += `<rect x="9" y="${y-4}" width="${w-18}" height="${rowH+4}" rx="3" fill="none" stroke="#c0413f" stroke-width="1.5"/>`;
+  }
+  const H = 46 + rows*(rowH+6) + 12;
+  return `<svg viewBox="0 0 ${w} ${H}" role="${big?"img":"presentation"}" ${big?`aria-label="Mock screenshot ${esc(name)}"`:'aria-hidden="true"'} xmlns="http://www.w3.org/2000/svg">
+    <rect width="${w}" height="${H}" fill="#f4f6f8"/><rect width="${w}" height="30" fill="#1b2733"/>
+    <circle cx="14" cy="15" r="4" fill="#5b6b7a"/><circle cx="28" cy="15" r="4" fill="#5b6b7a"/>
+    <rect x="44" y="10" width="120" height="10" rx="3" fill="#3b4a59"/>
+    <rect x="14" y="36" width="90" height="8" rx="2" fill="#8d9aa8"/>${body}</svg>`;
+}
+const opt = (s,sel) => `<option value="${s.id}" ${sel===s.id?"selected":""}>${esc(s.name)}</option>`;
+const sectionOptions = sel =>
+  GROUPS.map(g=>`<optgroup label="${g}">${SECTIONS.filter(s=>s.group===g).map(s=>opt(s,sel)).join("")}</optgroup>`).join("")
+  + `<optgroup label="Other">${opt(SEC["other"],sel)}</optgroup>`;
+
+/* ── user screens ── */
+function screenUser(){
+  const s = state.scenario;
+  if (s === "deny") return denyDomain();
+  if (s === "sent") return userSent();
+  const f = state.form, e = f.errors, len = f.text.trim().length;
+  return `<section class="card fade">
+    <div class="appbar"><h1>Plan vs Fact feedback</h1>
+      <div class="who"><span class="mono">${esc(ME)}</span><span class="badge">from SSO</span></div></div>
+    <div class="pad">
+      <p class="hint" style="margin:0 0 20px;max-width:62ch">Tell us what gets in your way in the new plan-vs-fact tool. We read everything: a month after release we collect the top problems and take them into a sprint. Your address is filled in automatically — we need it to come back to you with a question.</p>
+      <form id="fb" novalidate>
+        <div class="field ${e.section?"bad":""}">
+          <label for="section">Section <span class="hint">· required</span></label>
+          <select id="section" ${e.section?'aria-invalid="true"':""}>
+            <option value="">— choose a section —</option>${sectionOptions(f.section)}
+          </select>
+          ${e.section?`<p class="err">${esc(e.section)}</p>`:""}
+        </div>
+
+        <div class="field ${e.text?"bad":""}">
+          <label for="text">What happened <span class="hint">· at least 10 characters</span></label>
+          <textarea id="text" ${e.text?'aria-invalid="true"':""} placeholder="For example: copying planning to the next period turns part-time positions into full-time ones.">${esc(f.text)}</textarea>
+          <span class="counter ${len && len<10 ? "bad":""}">${len} / 10</span>
+          ${e.text?`<p class="err">${esc(e.text)}</p>`:""}
+        </div>
+
+        <div class="field">
+          <label>Screenshots <span class="hint">· up to 3 files, PNG or JPG, 5 MB each</span></label>
+          ${f.files.length?`<ul class="files">${f.files.map((x,i)=>`
+            <li><span class="thumb">${x.dataUrl?`<img src="${x.dataUrl}" alt="">`:shotSVG(x.name,false)}</span>
+              <span class="fname">${esc(x.name)}</span>
+              <span class="fsize">${fmtSize(x.size)}</span>
+              <button type="button" class="btn-link" data-rmfile="${i}">remove</button></li>`).join("")}</ul>`:""}
+          ${e.file?`<p class="err">${esc(e.file)}</p>`:""}
+          ${f.note?`<p class="ok-line">${esc(f.note)}</p>`:""}
+          <div class="drop" id="drop">
+            <button type="button" class="btn-ghost" id="addfile" ${f.files.length>=3?"disabled":""}>Choose a file</button>
+            <span class="hint">Or take a screenshot and paste it right here: <span class="kbd">Ctrl + V</span> <span class="kbd">⌘ + V</span> — no need to save a file first.</span>
+          </div>
+          <span class="hint">${f.files.length>=3?"Three files is the limit.":`You can add ${3-f.files.length} more.`}</span>
+        </div>
+
+        <div class="submitrow">
+          <button class="btn" id="send">Submit</button>
+          <span class="hint">We will email you if we need details.</span>
+        </div>
+      </form>
+    </div>
+  </section>
+  ${acNote([
+    "No section, or text under 10 characters, does not go through — what you typed stays (AC2)",
+    "A screenshot pastes straight from the clipboard, with no file saved to disk",
+    "A file over 5 MB is rejected with a clear message, everything else stays (AC8)",
+    "Identity comes from SSO only: the form has no field for an address (AC3)"])}`;
+}
+
+function userSent(){
+  const f = state.form;
+  return `<section class="card fade"><div class="appbar"><h1>Plan vs Fact feedback</h1>
+    <div class="who"><span class="mono">${esc(ME)}</span><span class="badge">from SSO</span></div></div>
+    <div class="pad"><div class="done">
+      <div class="tick" aria-hidden="true">✓</div>
+      <h2>Got it, thank you</h2>
+      <p class="hint" style="margin:0">Feedback #${f.ticket} is saved. If we need details, we will write to ${esc(ME)}.</p>
+      <dl class="recap">
+        <dt>Section</dt><dd>${esc(secLabel(f.section || "po-planning"))}</dd>
+        <dt>Text</dt><dd>${esc(f.text || FEED[0].text)}</dd>
+        <dt>Files</dt><dd>${f.files.length? f.files.map(x=>esc(x.name)).join(", ") : "none attached"}</dd>
+        <dt>Time</dt><dd class="mono">${esc(f.sentAt || "2026-09-10 11:42")}</dd>
+      </dl>
+      <button class="btn-ghost" id="again">Submit another one</button>
+    </div></div></section>
+    ${acNote(["Confirmation appears as soon as the record is saved (AC1)","You can see exactly what was sent: section, text, files, time"])}`;
+}
+
+function denyDomain(){
+  return `<section class="card fade"><div class="appbar"><h1>Plan vs Fact feedback</h1>
+    <div class="who"><span class="mono">a.petrov@contractor-agency.ru</span><span class="badge" style="background:var(--danger-soft);color:var(--danger)">outside domain</span></div></div>
+    <div class="pad"><div class="deny">
+      <div class="mark" aria-hidden="true">!</div>
+      <h2>This form is for company employees</h2>
+      <p style="margin:0">You are signed in as <span class="mono">a.petrov@contractor-agency.ru</span>. The form accepts feedback from corporate addresses on <span class="mono">${DOMAIN}</span>.</p>
+      <p class="hint" style="margin:0">If you have a corporate account, sign in with it. If you do not, pass your feedback through your manager.</p>
+    </div></div></section>
+    ${acNote(["Anyone outside the corporate domain gets an explicit refusal, not a blank screen (AC3)","The domain is checked on the server: passing the gateway is not the same as being an employee"])}`;
+}
+
+/* ── admin inbox ── */
+function selected(){
+  const {section,from,to,q} = state.filters;
+  let rows = FEED.filter(r=>{
+    if (section && r.section !== section) return false;
+    const d = r.at.slice(0,10);
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    if (q && !r.text.toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+  const byDate = (a,b)=> a.at < b.at ? 1 : a.at > b.at ? -1 : 0;
+  if (state.sort === "date-desc") rows.sort(byDate);
+  if (state.sort === "date-asc")  rows.sort((a,b)=>-byDate(a,b));
+  if (state.sort === "section")   rows.sort((a,b)=>{
+    const ka = secLabel(a.section), kb = secLabel(b.section);
+    return ka === kb ? byDate(a,b) : ka.localeCompare(kb,"en");
+  });
+  return rows;
+}
+
+function screenAdmin(){
+  if (state.scenario === "deny") return denyAdmin();
+  const rows = selected(), f = state.filters;
+  const dirty = f.section||f.from||f.to||f.q;
+  return `<section class="card fade">
+    <div class="appbar"><h1>Inbox · Plan vs Fact feedback</h1>
+      <div class="who">
+        <button class="btn-ghost" id="admins">Admins · ${ADMINS.length}</button>
+        <span class="mono">${esc(ME)}</span><span class="badge">admin</span></div></div>
+    ${tallyHTML()}
+    <div class="filters">
+      <div class="f"><label for="f-section">Section</label>
+        <select id="f-section"><option value="">all sections</option>${sectionOptions(f.section)}</select></div>
+      <div class="f"><label for="f-from">Date from</label><input type="date" id="f-from" value="${esc(f.from)}"></div>
+      <div class="f"><label for="f-to">to</label><input type="date" id="f-to" value="${esc(f.to)}"></div>
+      <div class="f" style="grid-column:span 2"><label for="f-q">Word in the text</label>
+        <input type="text" id="f-q" value="${esc(f.q)}" placeholder="for example: export"></div>
+      <div class="f"><label for="f-sort">Sort</label>
+        <select id="f-sort">
+          <option value="date-desc" ${state.sort==="date-desc"?"selected":""}>newest first</option>
+          <option value="date-asc" ${state.sort==="date-asc"?"selected":""}>oldest first</option>
+          <option value="section" ${state.sort==="section"?"selected":""}>by section</option>
+        </select></div>
+    </div>
+    <div class="tools">
+      <span class="found">Found: <b>${rows.length}</b> of ${FEED.length}</span>
+      ${dirty?`<button class="btn-link" id="f-reset">clear filters</button>`:""}
+      <span class="right"><button class="btn-ghost" id="export">Export${rows.length!==FEED.length?` · ${rows.length}`:""}</button></span>
+    </div>
+    ${rows.length? `<div class="scroller"><div class="rows">
+      <div class="colhead"><span>Section</span><span>Message</span><span>Author</span><span>Date</span></div>
+      ${rows.map(rowHTML).join("")}
+    </div></div>` : `
+      <div class="empty"><p style="margin:0 0 6px">No records match the filter.</p>
+      <button class="btn-link" id="f-reset2">Clear filters</button></div>`}
+  </section>
+  ${acNote([
+    "A count per section above the filters; clicking one filters the list",
+    "Four columns: section, text with screenshots under it, author, date (AC4)",
+    "Newest record on top by default; sorting by date and by section (AC4)",
+    "Filter by section, date range and word, with a count of what matched (AC5)",
+    "Excel and CSV export cover exactly the current selection; CSV is UTF-8 with BOM (AC6)",
+    "The admin list is visible and can be extended by pasting an address",
+    "Screenshots open from the row, served by our own handler after a permission check (AC8)"])}`;
+}
+
+function tallyHTML(){
+  const count = id => FEED.filter(r=>r.section===id).length;
+  const max = Math.max(...SECTIONS.map(s=>count(s.id)));
+  const chip = s => {
+    const n = count(s.id), active = state.filters.section === s.id;
+    if (!n) return `<span class="tchip zero" title="no feedback yet">${esc(s.name)}<span class="n">0</span></span>`;
+    return `<button class="tchip${n===max?" lead":""}" data-tally="${s.id}" aria-pressed="${active}"
+      title="${active?"clear the section filter":"show this section only"}">${esc(s.name)}<span class="n">${n}</span></button>`;
+  };
+  return `<div class="tally">
+    <div class="tally-head">
+      <span class="lbl">Feedback per section</span>
+      <span class="hint">click a section to filter the list</span>
+      <span class="total">total <b>${FEED.length}</b></span>
+    </div>
+    <div class="tgroups">
+      ${GROUPS.map(g=>`<div class="tgroup"><h3>${g}</h3>
+        <div class="tchips">${SECTIONS.filter(s=>s.group===g).map(chip).join("")}</div></div>`).join("")}
+      <div class="tgroup"><h3>Other</h3><div class="tchips">${chip(SEC["other"])}</div></div>
+    </div>
+  </div>`;
+}
+
+function rowHTML(r){
+  const s = SEC[r.section];
+  return `<div class="row">
+    <div class="c-section">${s && s.group!=="Other"?`<span class="grp">${esc(s.group.replace(" page",""))}</span>`:""}<span class="name">${esc(s?s.name:r.section)}</span></div>
+    <div class="c-text">
+      <p>${esc(r.text)}</p>
+      ${r.shots.length?`<div class="shots">${r.shots.map(n=>`<button class="shot" data-shot="${esc(n)}" title="${esc(n)}" aria-label="Open ${esc(n)}">${shotSVG(n,false)}</button>`).join("")}</div>`:""}
+      <span class="id">#${r.id}</span>
+    </div>
+    <div class="c-author mono">${esc(r.email)}</div>
+    <div class="c-date">${esc(r.at.slice(0,10))}<br><span class="t">${esc(r.at.slice(11))}</span></div>
+  </div>`;
+}
+
+function denyAdmin(){
+  return `<section class="card fade"><div class="appbar"><h1>Inbox · Plan vs Fact feedback</h1>
+    <div class="who"><span class="mono">olga.pavlova@emergingtravel.com</span><span class="badge" style="background:var(--warn-soft);color:var(--warn)">not an admin</span></div></div>
+    <div class="pad"><div class="deny">
+      <div class="mark" aria-hidden="true">!</div>
+      <h2>The inbox is for the plan-vs-fact team</h2>
+      <p style="margin:0">You are signed in as <span class="mono">olga.pavlova@emergingtravel.com</span>, and that address is not on the admin list.</p>
+      <p class="hint" style="margin:0">You can still leave feedback on the form — it is open to every employee. Need inbox access? Ask any admin to add your address.</p>
+    </div></div></section>
+    ${acNote(["The admin list is checked on the server on every request — for the page and for the inbox API (AC4)"])}`;
+}
+
+/* ── dev & QA screen (Russian, for the architecture talk) ── */
+function flowSVG(){
+  const box = (x,y,w,h,title,lines,kind)=>{
+    const fill = kind==="store" ? "var(--accent-soft)" : kind==="gate" ? "var(--warn-soft)"
+               : kind==="deny" ? "var(--danger-soft)" : "var(--surface)";
+    const stroke = kind==="store" ? "var(--accent)" : kind==="gate" ? "var(--warn)"
+               : kind==="deny" ? "var(--danger)" : "var(--line)";
+    const tcol = kind==="deny" ? "var(--danger)" : "var(--ink)";
+    return `<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${fill}" stroke="${stroke}"
+      ${kind==="deny"?'stroke-dasharray="4 3"':''}/>
+      <text x="${x+12}" y="${y+23}" font-size="12.5" font-weight="600" fill="${tcol}">${title}</text>
+      ${lines.map((l,i)=>`<text x="${x+12}" y="${y+41+i*14}" font-size="11" fill="var(--ink-3)">${l}</text>`).join("")}</g>`;
+  };
+  const arrow = (d,dash)=>`<path d="${d}" fill="none" stroke="var(--ink-3)" stroke-width="1.5"
+    ${dash?'stroke-dasharray="4 3"':''} marker-end="url(#ar)"/>`;
+  const lbl = (x,y,t)=>`<text x="${x}" y="${y}" font-size="10.5" fill="var(--ink-3)">${t}</text>`;
+  return `<svg viewBox="0 0 1010 412" role="img"
+    aria-label="Схема: сотрудник и админ проходят SSO-шлюз, форма и кабинет обращаются к API, данные в PostgreSQL и томе uploads, из кабинета выгрузка xlsx и csv">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
+
+    ${box(20,40,150,64,"Сотрудник",["браузер, ссылка","из план-факта"])}
+    ${box(20,260,150,64,"Админ",["почта из списка","админов"])}
+    ${box(210,40,180,284,"SSO-шлюз контура",["почта в заголовке","или подписанный JWT","подпись — по JWKS","домен сверяем сами","на сервере"],"gate")}
+    ${box(430,40,160,64,"Форма «/»",["Next.js + React","вставка из буфера"])}
+    ${box(620,40,170,64,"POST /api/feedback",["раздел из списка, ≥10","символов, ≤3 файлов"])}
+    ${box(620,150,380,64,"PostgreSQL (том)   ·   uploads/ (том)",["feedback · attachment · admin","имя файла на диске генерируем сами"],"store")}
+    ${box(430,260,160,64,"Кабинет «/admin»",["список админов —","проверка на сервере"])}
+    ${box(620,260,170,64,"GET /api/feedback",["фильтр, сортировка,","счётчики по разделам"])}
+    ${box(840,260,160,64,".xlsx / .csv",["ровно выборка","как на экране"])}
+    ${box(210,350,180,46,"Отказ: чужой домен",[],"deny")}
+    ${box(430,350,160,46,"Отказ: не админ",[],"deny")}
+
+    ${arrow("M170,72 H204")}
+    ${arrow("M390,72 H424")}
+    ${arrow("M590,72 H614")}
+    ${arrow("M170,292 H204")}
+    ${arrow("M390,292 H424")}
+    ${arrow("M590,292 H614")}
+    ${arrow("M790,292 H834")}
+    ${arrow("M705,104 V144")}
+    ${arrow("M705,214 V254")}
+    ${arrow("M300,324 V344", true)}
+    ${arrow("M510,324 V344", true)}
+    ${lbl(712,128,"INSERT + файлы на том")}
+    ${lbl(712,240,"SELECT по фильтру")}
+    ${lbl(20,150,"один вход")}
+    ${lbl(20,164,"на весь контур")}
+  </svg>`;
+}
+
+function screenDev(){
+  return `<section class="card fade dev">
+    <div class="appbar"><h1>Для разработчиков и тестировщиков</h1>
+      <div class="who"><span class="badge">разбор архитектуры</span></div></div>
+
+    <div class="block">
+      <h2>Как это работает</h2>
+      <p class="sub">Один путь для сотрудника и один для админа. Своей аутентификации нет: личность приходит из контура,
+      корпоративный домен и список админов проверяем сами на сервере при каждом запросе.</p>
+      <div class="diagram">${flowSVG()}</div>
+      <div class="legend">
+        <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>чужая зона: шлюз контура, его конфигурируете вы</span>
+        <span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>состояние: только на томах, иначе деплой обнуляет данные</span>
+        <span><i style="background:var(--danger-soft);border:1px solid var(--danger)"></i>явный отказ, не пустой экран</span>
+      </div>
+    </div>
+
+    <div class="block two">
+      <div>
+        <h2>Что, возможно, используем</h2>
+        <p class="sub">Продуктовая часть от стека не зависит — если у вас в компании принято иначе, меняем без спора.</p>
+        <table class="tbl">
+          <tr><th>Слой</th><th>Кандидат</th></tr>
+          <tr><td class="k">Приложение</td><td>Next.js (App Router) + TypeScript, React. Форма, кабинет и API в одном сервисе</td></tr>
+          <tr><td class="k">База</td><td>PostgreSQL. Доступ — Prisma или Drizzle; чистый <span class="mono">pg</span> тоже проходит, таблиц три</td></tr>
+          <tr><td class="k">Валидация</td><td>zod на входе API. Те же правила, что в форме, но решает сервер</td></tr>
+          <tr><td class="k">Файлы</td><td>Диск сервиса, том <span class="mono">uploads/</span>. Наружу не выносим, S3 не нужен</td></tr>
+          <tr><td class="k">Выгрузки</td><td>CSV своим кодом (UTF-8 с BOM), <span class="mono">.xlsx</span> — SheetJS или exceljs</td></tr>
+          <tr><td class="k">Вход</td><td>Адаптер <span class="mono">getCurrentUser()</span> + <span class="mono">AUTH_MODE</span>. Резерв — Auth.js с Google OAuth</td></tr>
+          <tr><td class="k">Запуск</td><td>Docker Compose: приложение + Postgres + <b>объявленные тома</b> для базы и файлов</td></tr>
+        </table>
+      </div>
+      <div>
+        <h2>Схема данных</h2>
+        <p class="sub">Три таблицы. Третья появилась, когда список админов переехал из конфига в кабинет.</p>
+        <table class="tbl">
+          <tr><th>Таблица</th><th>Колонки</th></tr>
+          <tr><td class="k mono">feedback</td><td class="mono">id · author_email · section_id · text · created_at</td></tr>
+          <tr><td class="k mono">attachment</td><td class="mono">id · feedback_id · filename · mime · size · path</td></tr>
+          <tr><td class="k mono">admin</td><td class="mono">email · added_by · added_at</td></tr>
+        </table>
+        <h3 style="margin-top:14px">Два решения, которые легко пропустить</h3>
+        <ul class="plain">
+          <li><b>Раздел хранится идентификатором</b>, не подписью: «Filters» есть и в Overview, и в Position page.
+          Строкой их склеит любой фильтр и любая выгрузка.</li>
+          <li><b>Список админов: конфиг — посевной, дальше база.</b> Иначе добавленный из кабинета админ
+          исчезает при следующем деплое.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Вход: три режима одного адаптера</h2>
+      <p class="sub">Весь остальной код знает только <span class="mono">getCurrentUser(): { email } | null</span>. Режим — флаг в конфиге,
+      выбор за вами: он зависит от того, что у нас реально стоит перед внутренними сервисами.</p>
+      <table class="tbl">
+        <tr><th>Режим</th><th>Откуда почта</th><th>Корректен только если</th><th></th></tr>
+        <tr><td class="k mono">proxy</td><td>заголовок или JWT от SSO-шлюза</td>
+          <td>подпись проверена по JWKS <b>либо</b> приложение недоступно в обход прокси и прокси
+          <b>перезаписывает</b> заголовок, а не дополняет</td><td><span class="tag2 prod">основной</span></td></tr>
+        <tr><td class="k mono">google</td><td>свой OAuth через Auth.js</td>
+          <td>клиент в Workspace создан, домен ограничен, silent SSO настроен (<span class="mono">hd</span>, <span class="mono">login_hint</span>, без <span class="mono">prompt=consent</span>)</td>
+          <td><span class="tag2">резерв</span></td></tr>
+        <tr><td class="k mono">dev</td><td><span class="mono">DEV_USER_EMAIL</span></td>
+          <td>только локально: при <span class="mono">NODE_ENV=production</span> приложение обязано <b>не подняться</b></td>
+          <td><span class="tag2 dev">локально</span></td></tr>
+      </table>
+      <h3 style="margin-top:14px">Что уже отвергнуто и почему — чтобы не предлагать заново</h3>
+      <ul class="plain">
+        <li>Читать cookie план-факта — чужой домен и чужой секрет сессий.</li>
+        <li>Токен в query-параметре — утечка в историю браузера, <span class="mono">Referer</span>, логи и скриншоты.</li>
+        <li>Доверять почте из параметра или поля формы — фидбек от имени руководителя в одну строку запроса.</li>
+        <li>VPN как аутентификация — говорит про сеть, не про человека.</li>
+        <li>Подписанные тикеты от команды план-факта — схема корректная, но это чужой релиз; держим как резерв.</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h2>Чек-лист код-ревью</h2>
+      <p class="sub">Семь пунктов, каждый ловит конкретную поломку. Первый и последний — самые дорогие.</p>
+      <ol class="chk">
+        <li><b>Заголовку с почтой доверяем только при выполненном условии</b> — подпись проверена либо приложение
+        изолировано от прямого доступа. Иначе любой сотрудник пришлёт чужую почту в заголовке.</li>
+        <li><b>Тома в compose объявлены</b> для базы и <span class="mono">uploads/</span>. Без них первый же деплой обнуляет данные.
+        <span class="tag2 risk">самое дорогое</span></li>
+        <li><b>Домен почты проверяется на сервере.</b> Шлюз пускает в контур и подрядчиков: «прошёл шлюз» ≠ «наш сотрудник».</li>
+        <li><b>Почта только из <span class="mono">getCurrentUser()</span></b> — ни query, ни поле формы, ни присланный клиентом токен.</li>
+        <li><b>Список админов проверяется на каждом запросе</b> — и к странице кабинета, и к его API, и к выгрузкам.</li>
+        <li><b>Тип и размер файла — на сервере</b>, имя от пользователя никогда не становится путём на диске.</li>
+        <li><b>Файлы отдаёт свой обработчик</b> после проверки прав, а не статика. Иначе ссылка на скриншот
+        работает у кого угодно.</li>
+      </ol>
+    </div>
+
+    <div class="block">
+      <h2>Тестировщикам: что проверять</h2>
+      <p class="sub">Восемь замороженных критериев приёмки и краевые случаи, которые из них не читаются напрямую.</p>
+      <ul class="qa">
+        <li><span class="ac">AC1</span><span>Отправка сохраняет запись с почтой, разделом, текстом и датой; подтверждение быстрее 3 секунд.</span></li>
+        <li><span class="ac">AC2</span><span>Без раздела и с текстом короче 10 символов не проходит; <b>введённый текст не теряется</b>, приложенные файлы остаются.</span></li>
+        <li><span class="ac">AC3</span><span>Почта вне корпоративного домена: явный отказ и на форме, и в кабинете. Проверять подделкой заголовка, если режим <span class="mono">proxy</span>.</span></li>
+        <li><span class="ac">AC4</span><span>Админ видит все записи, свежая сверху; не-админ на этой странице получает отказ. Отдельно — прямой запрос к API кабинета без прав.</span></li>
+        <li><span class="ac">AC5</span><span>Фильтры по разделу, периоду и слову; счётчик найденного совпадает с числом строк. «Filters» в Overview и в Position фильтруются <b>раздельно</b>.</span></li>
+        <li><span class="ac">AC6</span><span>CSV открывается в Excel без битой кириллицы; <span class="mono">.xlsx</span> и CSV содержат ровно выборку с экрана в том же порядке.</span></li>
+        <li><span class="ac">AC7</span><span>После <span class="mono">docker compose down &amp;&amp; up</span> все записи и файлы на месте.</span></li>
+        <li><span class="ac">AC8</span><span>До 3 файлов PNG/JPG до 5 МБ; четвёртый и файл сверх лимита отклоняются с понятным текстом. Скриншот из буфера — тот же путь и те же лимиты.</span></li>
+        <li><span class="ac">край</span><span>Ссылка на скриншот из-под другого аккаунта и без входа. Файл с расширением <span class="mono">.png</span>, но не картинка. Текст с кавычками и точкой с запятой — не должен ломать CSV.</span></li>
+        <li><span class="ac">край</span><span><span class="mono">AUTH_MODE=dev</span> в проде: приложение не поднимается. Админ снял сам себя из списка. Одна и та же почта добавляется дважды.</span></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <h2>Что нужно от вас на встрече</h2>
+      <div class="open">
+        <div><span><b>Какой SSO стоит перед внутренними сервисами</b> и что именно он передаёт: заголовок или подписанный JWT, какое имя, есть ли JWKS. От этого зависит режим входа.</span><span class="tag2 prod">блокирует</span></div>
+        <div><span><b>Куда деплоим</b> внутри контура и кто владеет томами для базы и файлов.</span><span class="tag2 prod">блокирует</span></div>
+        <div><span><b>Приложение будет недоступно в обход прокси?</b> Если нет — режим <span class="mono">proxy</span> с голым заголовком некорректен, идём в резерв.</span><span class="tag2 risk">риск</span></div>
+        <div><span><b>Стек и доступ к базе</b> — подтверждаете Next.js + PostgreSQL или меняете.</span><span class="tag2">за вами</span></div>
+        <div><span>Кто создаёт OAuth-клиент в Workspace и как быстро — нужно только для резервного режима.</span><span class="tag2">за вами</span></div>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2>Чего в этом прототипе нет — сознательно</h2>
+      <ul class="plain">
+        <li>Аутентификации: почта нарисована, режимы <span class="mono">AUTH_MODE</span> в прототипе не работают.</li>
+        <li>Сервера и базы: данные моковые, ничего не сохраняется, после перезагрузки страницы всё как было.</li>
+        <li>Статусов обработки, тегов, комментариев команды, дашборда аналитики, «своих обращений» и встраиваемого
+        виджета — это следующий заход, не v1.</li>
+      </ul>
+    </div>
+  </section>`;
+}
+
+const acNote = items => `<aside class="ac"><h3>what this screen proves</h3><ul>${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></aside>`;
+
+/* ── render ── */
+function render(){
+  const scen = SCENARIOS[state.role];
+  document.querySelector(".shell-bar").hidden = !scen.length;
+  document.getElementById("scen").innerHTML = scen
+    .map(s=>`<button data-scen="${s.id}" aria-pressed="${state.scenario===s.id}">${s.label}</button>`).join("");
+  document.getElementById("r-user").setAttribute("aria-pressed", state.role==="user");
+  document.getElementById("r-admin").setAttribute("aria-pressed", state.role==="admin");
+  document.getElementById("r-dev").setAttribute("aria-pressed", state.role==="dev");
+  document.getElementById("app").innerHTML =
+    state.role === "user" ? screenUser() : state.role === "admin" ? screenAdmin() : screenDev();
+}
+function setRole(role){
+  state.role = role;
+  state.scenario = SCENARIOS[role].length ? SCENARIOS[role][0].id : "";
+  applyScenario();
+}
+
+function applyScenario(){
+  const s = state.scenario;
+  if (state.role === "dev"){ render(); return; }
+  if (state.role === "user"){
+    if (s === "blank") state.form = {section:"", text:"", files:[], errors:{}, note:"", sentAt:null, ticket:413};
+    if (s === "filled") state.form = {section:"ov-export",
+      text:"The Overview export is missing a team column, so I merge two files by hand every time.",
+      files:[{name:"excel-export.png", size:2300000}], errors:{}, note:"", sentAt:null, ticket:413};
+    if (s === "errors") state.form = {section:"", text:"broken",
+      files:[{name:"error-screen.png", size:412000}], note:"",
+      errors:{section:"Choose the section your feedback is about.",
+              text:"Add a bit more detail: at least 10 characters, you have 6.",
+              file:"“screen-recording.png” is 7.6 MB, over the 5 MB limit. It was not attached; your text and other files are untouched."},
+      sentAt:null, ticket:413};
+    if (s === "pasted") state.form = {section:"ov-graph",
+      text:"Plan and fact are drawn in the same colour on the graph, I cannot tell the lines apart. Screenshot attached — pasted straight from the clipboard.",
+      files:[{name:"pasted-screenshot-1.png", size:246000}], errors:{},
+      note:"Screenshot pasted from the clipboard as “pasted-screenshot-1.png”.", sentAt:null, ticket:413};
+    if (s === "sent") state.form = {section:"po-planning",
+      text:"Copying planning to the next period breaks part-time positions: they come over as full-time. I fix 30 rows by hand every time.",
+      files:[{name:"planning-copy.png",size:840000},{name:"after-copy.png",size:1100000}],
+      errors:{}, note:"", sentAt:"2026-09-10 11:42", ticket:412};
+  } else {
+    if (s === "list" || s === "deny"){ state.filters = {section:"",from:"",to:"",q:""}; state.sort = "date-desc"; }
+    if (s === "filtered"){ state.filters = {section:"ov-export", from:"2026-09-01", to:"2026-09-10", q:""}; state.sort = "date-desc"; }
+    if (s === "bysection"){ state.filters = {section:"",from:"",to:"",q:""}; state.sort = "section"; }
+    if (s === "nothing"){ state.filters = {section:"po-raise", from:"", to:"", q:"graph"}; state.sort = "date-desc"; }
+  }
+  render();
+}
+
+document.getElementById("r-user").onclick = ()=>setRole("user");
+document.getElementById("r-admin").onclick = ()=>setRole("admin");
+document.getElementById("r-dev").onclick = ()=>setRole("dev");
+document.getElementById("scen").onclick = e=>{
+  const b = e.target.closest("[data-scen]"); if(!b) return;
+  state.scenario = b.dataset.scen; applyScenario();
+};
+
+const dlgPick = document.getElementById("dlg-pick");
+const dlgExp = document.getElementById("dlg-exp");
+const dlgAdm = document.getElementById("dlg-admins");
+const dlgShot = document.getElementById("dlg-shot");
+document.addEventListener("click", e=>{
+  if (e.target.closest("[data-close]")) e.target.closest("dialog").close();
+});
+
+const app = document.getElementById("app");
+app.addEventListener("input", e=>{
+  const t = e.target;
+  if (t.id === "text"){
+    state.form.text = t.value;
+    const len = t.value.trim().length, c = t.parentElement.querySelector(".counter");
+    c.textContent = `${len} / 10`; c.classList.toggle("bad", len>0 && len<10); return;
+  }
+  if (t.id === "section"){ state.form.section = t.value; return; }
+  if (t.id === "f-sort"){ state.sort = t.value; render(); document.getElementById("f-sort")?.focus(); return; }
+  const key = {"f-section":"section","f-from":"from","f-to":"to","f-q":"q"}[t.id];
+  if (key){
+    state.filters[key] = t.value; render();
+    const el = document.getElementById(t.id);
+    if (el){ el.focus(); if (el.type === "text") el.setSelectionRange(el.value.length, el.value.length); }
+  }
+});
+
+app.addEventListener("click", e=>{
+  const t = e.target;
+  if (t.id === "addfile"){ openPick(); return; }
+  if (t.dataset.rmfile !== undefined){ state.form.files.splice(+t.dataset.rmfile,1); state.form.note=""; render(); return; }
+  if (t.id === "send"){ e.preventDefault(); submit(); return; }
+  if (t.id === "again"){ state.scenario = "blank"; applyScenario(); return; }
+  if (t.id === "f-reset" || t.id === "f-reset2"){ state.filters={section:"",from:"",to:"",q:""}; state.scenario="list"; render(); return; }
+  const tally = t.closest("[data-tally]");
+  if (tally){
+    const id = tally.dataset.tally;
+    state.filters.section = state.filters.section === id ? "" : id;
+    render(); return;
+  }
+  if (t.id === "export"){ openExport(); return; }
+  if (t.id === "admins"){ openAdmins(); return; }
+  const shot = t.closest("[data-shot]");
+  if (shot){ openShot(shot.dataset.shot); return; }
+});
+
+/* pasting a screenshot from the clipboard */
+let pasteCount = 0;
+document.addEventListener("paste", e=>{
+  if (state.role !== "user" || state.scenario === "deny" || state.scenario === "sent") return;
+  const items = [...(e.clipboardData?.items || [])].filter(i => i.type.startsWith("image/"));
+  if (!items.length) return;
+  e.preventDefault();
+  const f = state.form;
+  if (f.files.length >= 3){
+    f.errors = {...f.errors, file:"Three files are already attached — remove one to paste another."};
+    f.note = ""; render(); return;
+  }
+  const file = items[0].getAsFile(); if (!file) return;
+  if (file.size > 5*1024*1024){
+    f.errors = {...f.errors, file:`The pasted screenshot is ${fmtSize(file.size)}, over the 5 MB limit. Not attached; your text is untouched.`};
+    f.note = ""; render(); return;
+  }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const name = `pasted-screenshot-${++pasteCount}.png`;
+    delete f.errors.file;
+    f.files.push({name, size:file.size, dataUrl:reader.result});
+    f.note = `Screenshot pasted from the clipboard as "${name}".`;
+    render();
+  };
+  reader.readAsDataURL(file);
+});
+
+function submit(){
+  const f = state.form, errors = {};
+  if (!f.section) errors.section = "Choose the section your feedback is about.";
+  const len = f.text.trim().length;
+  if (len === 0) errors.text = "Tell us what happened: the field is empty.";
+  else if (len < 10) errors.text = `Add a bit more detail: at least 10 characters, you have ${len}.`;
+  f.errors = errors;
+  if (Object.keys(errors).length){ render(); document.querySelector(".field.bad select, .field.bad textarea")?.focus(); return; }
+  f.sentAt = "2026-09-10 11:42"; f.ticket = 413;
+  state.scenario = "sent"; render();
+}
+
+function openPick(){
+  document.getElementById("pick-list").innerHTML = PICKABLE.map((p,i)=>`
+    <li><button data-pick="${i}"><span class="mono">${esc(p.name)}</span>
+      ${p.tooBig?`<span class="tag">over 5 MB</span>`:""}
+      <span class="fsize">${fmtSize(p.size)}</span></button></li>`).join("");
+  dlgPick.showModal();
+}
+document.getElementById("pick-list").onclick = e=>{
+  const b = e.target.closest("[data-pick]"); if(!b) return;
+  const p = PICKABLE[+b.dataset.pick]; dlgPick.close();
+  const f = state.form;
+  if (p.tooBig){
+    f.errors = {...f.errors, file:`"${p.name}" is ${fmtSize(p.size)}, over the 5 MB limit. It was not attached; your text and other files are untouched.`};
+    f.note = "";
+  } else { delete f.errors.file; f.files.push({name:p.name, size:p.size}); f.note = ""; }
+  render();
+};
+
+/* ── exports ── */
+const EXP_HEAD = ["#","Section","Message","Author","Date","Screenshots"];
+const expRows = rows => rows.map(r=>[r.id, secLabel(r.section), r.text, r.email, r.at, r.shots.join("; ")]);
+
+function csvText(rows){
+  const cell = v => `"${String(v).replace(/"/g,'""')}"`;
+  return "﻿" + [EXP_HEAD.map(cell).join(";"), ...expRows(rows).map(r=>r.map(cell).join(";"))].join("\r\n") + "\r\n";
+}
+function xlsxBlob(rows){
+  const ws = XLSX.utils.aoa_to_sheet([EXP_HEAD, ...expRows(rows)]);
+  ws["!cols"] = [{wch:6},{wch:26},{wch:70},{wch:34},{wch:18},{wch:30}];
+  ws["!autofilter"] = {ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:rows.length, c:EXP_HEAD.length-1}})};
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Feedback");
+  const out = XLSX.write(wb, {bookType:"xlsx", type:"array"});
+  return new Blob([out], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+
+let downloadsNS = null;
+if (window.claude && typeof window.claude.use === "function"){
+  window.claude.use("downloads").then(ns => { downloadsNS = ns; }).catch(()=>{});
+}
+async function handOver(filename, data, btn){
+  const label = btn.textContent;
+  if (downloadsNS){
+    btn.disabled = true;
+    try { await downloadsNS.save({filename, data}); btn.textContent = "Saved"; }
+    catch (err){ btn.disabled = false; btn.textContent = (err && err.code === "declined") ? label : "Could not save"; }
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], {type:"text/csv;charset=utf-8"}));
+  a.download = filename; a.click(); URL.revokeObjectURL(a.href);
+}
+
+function openExport(){
+  const rows = selected(), text = csvText(rows);
+  const lines = text.replace(/^﻿/,"").split("\r\n").filter(Boolean);
+  document.getElementById("exp-note").textContent =
+    `The file will hold exactly the ${rows.length} ${rows.length===1?"record":"records"} on screen under the current filter, in the same order.`;
+  document.getElementById("exp-body").textContent =
+    lines.slice(0,5).join("\n") + (lines.length>5 ? `\n… ${lines.length-5} more rows` : "");
+  const bx = document.getElementById("dl-xlsx"), bc = document.getElementById("dl-csv");
+  bx.disabled = false; bx.textContent = "Excel (.xlsx)";
+  bc.disabled = false; bc.textContent = "CSV (.csv)";
+  bx.onclick = ()=> handOver("planfakt-feedback.xlsx", xlsxBlob(rows), bx);
+  bc.onclick = ()=> handOver("planfakt-feedback.csv", text, bc);
+  dlgExp.showModal();
+}
+
+/* ── admins ── */
+function renderAdmins(){
+  document.getElementById("admin-list").innerHTML = ADMINS.map((a,i)=>`
+    <li><span class="mail">${esc(a.email)}</span>
+      ${a.email===ME?`<span class="you">this is you</span>`:`<span class="you">added: ${esc(a.added)}</span>
+      <button class="btn-link" data-rmadmin="${i}">remove</button>`}</li>`).join("");
+}
+function openAdmins(){
+  renderAdmins();
+  document.getElementById("admin-msg").textContent = "";
+  document.getElementById("admin-email").value = "";
+  dlgAdm.showModal();
+}
+document.getElementById("admin-list").onclick = e=>{
+  const b = e.target.closest("[data-rmadmin]"); if(!b) return;
+  const gone = ADMINS.splice(+b.dataset.rmadmin,1)[0];
+  renderAdmins(); render();
+  const msg = document.getElementById("admin-msg");
+  msg.className = "hint"; msg.textContent = `${gone.email} can no longer open the inbox.`;
+};
+document.getElementById("admin-add").onclick = ()=>{
+  const input = document.getElementById("admin-email");
+  const msg = document.getElementById("admin-msg");
+  const email = input.value.trim().toLowerCase();
+  const fail = t => { msg.className = "err"; msg.textContent = t; input.focus(); };
+  if (!email) return fail("Type an address first.");
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) return fail("That does not look like an email address.");
+  if (!email.endsWith(DOMAIN)) return fail(`Corporate addresses on ${DOMAIN} only.`);
+  if (ADMINS.some(a=>a.email===email)) return fail("That address is already on the list.");
+  ADMINS.push({email, added:"2026-09-10 by " + ME.split("@")[0]});
+  input.value = "";
+  msg.className = "ok-line"; msg.textContent = `${email} added — access applies the next time they open the inbox.`;
+  renderAdmins(); render();
+};
+
+function openShot(name){
+  document.getElementById("shot-name").textContent = name;
+  document.getElementById("shot-body").innerHTML = shotSVG(name, true) +
+    `<p class="hint" style="margin:0">Mock image. In the real service the file is served by our own handler after a permission check, not as a static asset.</p>`;
+  dlgShot.showModal();
+}
+
+applyScenario();
+</script>
