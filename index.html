@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Сбор фидбека по план-факту</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f7f7f8; --card:#fff; --ink:#17181c; --muted:#6b6f76;
+    --line:#e4e5e9; --accent:#2f5bea;
+    --font:"Montserrat",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{--bg:#121317;--card:#1a1c21;--ink:#f2f3f5;--muted:#9aa0a8;--line:#2b2e35;--accent:#7d9bff}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.55}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 20px 72px}
+  h1{font-size:28px;font-weight:700;margin:0 0 10px;letter-spacing:-.01em}
+  .lead{color:var(--muted);margin:0 0 36px;font-size:15px}
+  h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:36px 0 12px}
+  ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+  a.card{display:block;padding:16px 18px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;text-decoration:none;color:inherit;transition:border-color .15s,transform .15s}
+  a.card:hover{border-color:var(--accent);transform:translateY(-1px)}
+  a.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .t{font-weight:600;font-size:15px;margin-bottom:3px}
+  .d{color:var(--muted);font-size:13.5px}
+  .primary .t::after{content:"→";margin-left:8px;color:var(--accent)}
+  footer{margin-top:44px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Сбор фидбека по план-факту</h1>
+  <p class="lead">Внутренний сервис: сотрудники оставляют фидбек по новому план-факту, команда
+  продукта читает его в кабинете и выгружает в Excel или CSV. Здесь — прототип и документы к нему.</p>
+
+  <h2>Прототип</h2>
+  <ul>
+    <li><a class="card primary" href="04-prototype.html">
+      <div class="t">Кликабельный прототип</div>
+      <div class="d">Три раздела: User · form, Admin · inbox и «Для разработки». Моковые данные, ничего не сохраняется</div>
+    </a></li>
+  </ul>
+
+  <h2>Документы</h2>
+  <ul>
+    <li><a class="card" href="03-для-разработчиков.html">
+      <div class="t">Техспека для разработки</div>
+      <div class="d">Зоны решений, схема данных, режимы входа, чек-лист безопасности</div>
+    </a></li>
+    <li><a class="card" href="02-архитектура-разбор.html">
+      <div class="t">Архитектура простым языком</div>
+      <div class="d">Путь одного фидбека, схема таблиц, глоссарий</div>
+    </a></li>
+    <li><a class="card" href="https://github.com/dmitriykovalev-source/planfakt-feedback/blob/main/01-импакт-и-идея.md">
+      <div class="t">Импакт и идея</div>
+      <div class="d">Граница v1 и восемь замороженных критериев приёмки</div>
+    </a></li>
+    <li><a class="card" href="https://github.com/dmitriykovalev-source/planfakt-feedback/blob/main/ЖУРНАЛ.md">
+      <div class="t">Журнал решений</div>
+      <div class="d">Что сделано, что решено и почему, открытые вопросы</div>
+    </a></li>
+  </ul>
+
+  <footer>Исходники: <a href="https://github.com/dmitriykovalev-source/planfakt-feedback">github.com/dmitriykovalev-source/planfakt-feedback</a></footer>
+</div>
+</body>
+</html>
