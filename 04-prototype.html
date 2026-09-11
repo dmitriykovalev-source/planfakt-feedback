@@ -89,20 +89,11 @@ textarea{min-height:140px;resize:vertical;line-height:1.55}
 .ok-line{display:flex;gap:7px;color:var(--ok);font-size:13.5px;margin:0}
 .counter{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);align-self:flex-end}
 .counter.bad{color:var(--danger)}
-.drop{border:1px dashed var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surface-2)}
-.drop.hot{border-color:var(--accent);background:var(--accent-soft)}
-.kbd{font-family:var(--font-mono);font-size:11.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 5px;background:var(--surface);white-space:nowrap}
 .btn{background:var(--accent);color:#fff;border:0;border-radius:var(--radius);padding:10px 20px;font-weight:500;cursor:pointer}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:8px 14px;cursor:pointer}
 .btn-ghost:disabled{opacity:.5;cursor:not-allowed}
 .btn-link{background:none;border:0;color:var(--accent-ink);text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
-.files{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-.files li{display:flex;gap:10px;align-items:center;font-size:13.5px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:6px 10px}
-.files .thumb{width:44px;height:30px;border:1px solid var(--line);border-radius:3px;object-fit:cover;background:var(--surface);flex:0 0 auto}
-.files .thumb svg{display:block;width:100%;height:100%}
-.files .fname{font-family:var(--font-mono);overflow-wrap:anywhere}
-.files .fsize{color:var(--ink-3);font-family:var(--font-mono);margin-left:auto;white-space:nowrap}
 .submitrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 
 /* submitted */
@@ -159,9 +150,6 @@ textarea{min-height:140px;resize:vertical;line-height:1.55}
 .c-author{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere}
 .c-date{font-family:var(--font-mono);font-size:12.5px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
 .c-date .t{color:var(--ink-3)}
-.shots{display:flex;gap:8px;flex-wrap:wrap}
-.shot{border:1px solid var(--line);border-radius:4px;padding:0;background:var(--surface-2);cursor:pointer;line-height:0}
-.shot svg{display:block;width:92px;height:62px}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-3)}
 .scroller{overflow-x:auto}
 @media (max-width:860px){
@@ -179,11 +167,6 @@ dialog::backdrop{background:rgba(10,18,26,.55)}
 .dlg-head .x{margin-left:auto}
 .dlg-body{padding:18px;display:flex;flex-direction:column;gap:14px}
 pre.csv{margin:0;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:12px;overflow-x:auto;font-family:var(--font-mono);font-size:12.5px;line-height:1.6}
-.pick{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.pick button{width:100%;display:flex;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:9px 12px;cursor:pointer}
-.pick .fsize{margin-left:auto;font-family:var(--font-mono);font-size:12.5px;color:var(--ink-3)}
-.pick .tag{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:3px;background:var(--warn-soft);color:var(--warn)}
-.lightbox svg,.lightbox img{display:block;width:min(680px,88vw);height:auto;border-radius:4px}
 .admins{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .admins li{display:flex;gap:10px;align-items:center;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--radius);padding:7px 11px;font-size:13.5px}
 .admins .mail{font-family:var(--font-mono);font-size:12.5px;overflow-wrap:anywhere}
@@ -254,14 +237,6 @@ ol.chk b{font-weight:600}
 
 <main id="app"></main>
 
-<dialog id="dlg-pick">
-  <div class="dlg-head"><h3>Pick a file</h3><button class="btn-ghost x" data-close>Close</button></div>
-  <div class="dlg-body">
-    <p class="hint" style="margin:0">The prototype offers prepared files instead of the system dialog. The last one is deliberately over 5 MB.</p>
-    <ul class="pick" id="pick-list"></ul>
-  </div>
-</dialog>
-
 <dialog id="dlg-exp">
   <div class="dlg-head"><h3>Export</h3><button class="btn-ghost x" data-close>Close</button></div>
   <div class="dlg-body">
@@ -286,11 +261,6 @@ ol.chk b{font-weight:600}
     </div>
     <p id="admin-msg" style="margin:0"></p>
   </div>
-</dialog>
-
-<dialog id="dlg-shot" class="lightbox">
-  <div class="dlg-head"><h3 id="shot-name">screenshot.png</h3><button class="btn-ghost x" data-close>Close</button></div>
-  <div class="dlg-body" id="shot-body"></div>
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -333,64 +303,46 @@ let ADMINS = [
 /* ── mock feedback ── */
 const FEED = [
   {id:412, email:"marina.eremina@emergingtravel.com", section:"po-planning", at:"2026-09-10 11:42",
-   text:"Copying planning to the next period breaks part-time positions: they come over as full-time. I fix 30 rows by hand every time.",
-   shots:["planning-copy.png","after-copy.png"]},
+   text:"Copying planning to the next period breaks part-time positions: they come over as full-time. I fix 30 rows by hand every time."},
   {id:411, email:"anton.grishin@emergingtravel.com", section:"ov-export", at:"2026-09-10 10:15",
-   text:"A quarterly export from Overview takes 4 minutes and often dies on a timeout. Either show progress or email me the file.", shots:[]},
+   text:"A quarterly export from Overview takes 4 minutes and often dies on a timeout. Either show progress or email me the file."},
   {id:410, email:"olga.pavlova@emergingtravel.com", section:"ov-graph", at:"2026-09-10 09:58",
-   text:"The graph has no axis label for FTE, and plan and fact are drawn in the same colour, so I cannot tell them apart. A legend and two colours would fix it.",
-   shots:["graph-legend.png"]},
+   text:"The graph has no axis label for FTE, and plan and fact are drawn in the same colour, so I cannot tell them apart. A legend and two colours would fix it."},
   {id:409, email:"sergey.kim@emergingtravel.com", section:"po-edit-clos", at:"2026-09-09 18:30",
-   text:"I was able to edit and save a closed position, and the closing date moved into last month. Screenshot of the form attached.",
-   shots:["edit-closed.png"]},
+   text:"I was able to edit and save a closed position, and the closing date moved into last month. The form gave no warning at all."},
   {id:408, email:"marina.eremina@emergingtravel.com", section:"ov-widget", at:"2026-09-09 16:04",
-   text:"The Overview widget shows yesterday's numbers with no note about when it was refreshed. Twice already I made a call on stale data.",
-   shots:["widget-stale.png"]},
+   text:"The Overview widget shows yesterday's numbers with no note about when it was refreshed. Twice already I made a call on stale data."},
   {id:407, email:"ivan.d.orlov@emergingtravel.com", section:"po-search", at:"2026-09-09 14:21",
-   text:"Search tolerates no typos and does not match position codes, only the full title. Anything but an exact match returns nothing.", shots:[]},
+   text:"Search tolerates no typos and does not match position codes, only the full title. Anything but an exact match returns nothing."},
   {id:406, email:"natalia.zaytseva@emergingtravel.com", section:"po-widget", at:"2026-09-08 12:47",
-   text:"The planning widget gives no warning when I go over budget. I only learn about it from the month-end report.",
-   shots:["planning-widget-budget.png"]},
+   text:"The planning widget gives no warning when I go over budget. I only learn about it from the month-end report."},
   {id:405, email:"pavel.hlebnikov@emergingtravel.com", section:"ov-export", at:"2026-09-08 11:03",
-   text:"Dates arrive as text in the export, so Excel will not calculate on them. I reformat the column by hand every single time.",
-   shots:["excel-dates.png"]},
+   text:"Dates arrive as text in the export, so Excel will not calculate on them. I reformat the column by hand every single time."},
   {id:404, email:"olga.pavlova@emergingtravel.com", section:"po-raise", at:"2026-09-05 17:52",
-   text:"A raise stalls when the manager is on leave: the deputy is never notified. We need approval to hand over for the absence.", shots:[]},
+   text:"A raise stalls when the manager is on leave: the deputy is never notified. We need approval to hand over for the absence."},
   {id:403, email:"sergey.kim@emergingtravel.com", section:"po-list", at:"2026-09-05 10:09",
-   text:"The positions list freezes past 50 rows and the scroll jumps. My unit has 180 positions, so the page is unusable.",
-   shots:["positions-list-lag.png"]},
+   text:"The positions list freezes past 50 rows and the scroll jumps. My unit has 180 positions, so the page is unusable."},
   {id:402, email:"anton.grishin@emergingtravel.com", section:"ov-filters", at:"2026-09-04 19:26",
-   text:"Overview filters reset when I open a position and come back. I rebuild the same selection every time.", shots:[]},
+   text:"Overview filters reset when I open a position and come back. I rebuild the same selection every time."},
   {id:401, email:"natalia.zaytseva@emergingtravel.com", section:"po-create", at:"2026-09-03 08:41",
-   text:"Creating a position marks a field required that in our process the finance director fills in later. So I type “TBC” to get past it.",
-   shots:["create-position.png"]},
+   text:"Creating a position marks a field required that in our process the finance director fills in later. So I type “TBC” to get past it."},
   {id:400, email:"ivan.d.orlov@emergingtravel.com", section:"ov-tdata", at:"2026-09-02 15:12",
-   text:"Teams data mixes disbanded teams in with live ones and marks neither. Reports built on it never reconcile.",
-   shots:["teams-data.png"]},
+   text:"Teams data mixes disbanded teams in with live ones and marks neither. Reports built on it never reconcile."},
   {id:399, email:"pavel.hlebnikov@emergingtravel.com", section:"ov-tmenu", at:"2026-09-01 09:40",
-   text:"The teams menu has no search and we have over 40 teams. I scan the whole list by eye every time.", shots:[]},
+   text:"The teams menu has no search and we have over 40 teams. I scan the whole list by eye every time."},
   {id:398, email:"olga.pavlova@emergingtravel.com", section:"po-changes", at:"2026-08-31 17:05",
-   text:"Position history does not show who changed an FTE value, only the date and the new number. For disputes we need the author.",
-   shots:["position-changes.png"]},
+   text:"Position history does not show who changed an FTE value, only the date and the new number. For disputes we need the author."},
   {id:397, email:"marina.eremina@emergingtravel.com", section:"po-edit-open", at:"2026-08-28 13:33",
-   text:"Editing an open position silently drops my comment if it runs longer than a couple of lines.", shots:[]},
+   text:"Editing an open position silently drops my comment if it runs longer than a couple of lines."},
   {id:396, email:"anton.grishin@emergingtravel.com", section:"other", at:"2026-08-27 16:20",
-   text:"After signing out, the browser back button still shows the previous page with data on it. Feels unsafe, even if it belongs to no section.",
-   shots:["logout-back.png"]},
+   text:"After signing out, the browser back button still shows the previous page with data on it. Feels unsafe, even if it belongs to no section."},
   {id:395, email:"ivan.d.orlov@emergingtravel.com", section:"other", at:"2026-08-26 10:48",
-   text:"We are missing onboarding material: half the team cannot tell plan from forecast. A short video would settle it.", shots:[]}
-];
-
-const PICKABLE = [
-  {name:"error-screen.png", size:412000},
-  {name:"planning-widget.jpg", size:1840000},
-  {name:"excel-export.png", size:2300000},
-  {name:"screen-recording.png", size:7600000, tooBig:true}
+   text:"We are missing onboarding material: half the team cannot tell plan from forecast. A short video would settle it."}
 ];
 
 const SCENARIOS = {
   user:[{id:"blank",label:"Empty form"},{id:"filled",label:"Filled in"},{id:"errors",label:"Validation errors"},
-        {id:"pasted",label:"Pasted screenshot"},{id:"sent",label:"Submitted"},{id:"deny",label:"Denied: outside domain"}],
+        {id:"sent",label:"Submitted"},{id:"deny",label:"Denied: outside domain"}],
   admin:[{id:"list",label:"Feedback list"},{id:"filtered",label:"Filter applied"},{id:"bysection",label:"Sorted by section"},
          {id:"nothing",label:"Nothing found"},{id:"deny",label:"Denied: not an admin"}],
   dev:[]
@@ -398,35 +350,13 @@ const SCENARIOS = {
 
 const state = {
   role:"user", scenario:"blank",
-  form:{section:"", text:"", files:[], errors:{}, note:"", sentAt:null, ticket:413},
+  form:{section:"", text:"", errors:{}, sentAt:null, ticket:413},
   filters:{section:"", from:"", to:"", q:""},
   sort:"date-desc"
 };
 
-const fmtSize = b => b >= 1048576 ? (b/1048576).toFixed(1)+" MB" : Math.round(b/1024)+" KB";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
-/* a fake screenshot, deterministic from the file name */
-function shotSVG(name, big){
-  let h = 0; for (const ch of name) h = (h*31 + ch.charCodeAt(0)) & 0xffff;
-  const rows = 5 + (h % 4), markRow = h % rows, w = 320, rowH = 16;
-  let body = "";
-  for (let i=0;i<rows;i++){
-    const y = 46 + i*(rowH+6); let x = 14;
-    [0.28,0.18,0.22,0.14].forEach((c,j)=>{
-      const cw = (w-28)*c - 8, mark = i===markRow && j===((h>>3)%4);
-      body += `<rect x="${x}" y="${y}" width="${cw}" height="${rowH-4}" rx="2" fill="${mark?"#c0413f":"#b9c4cf"}" opacity="${mark?"0.85":(0.35+((h>>j)%3)*0.15)}"/>`;
-      x += cw + 8;
-    });
-    if (i===markRow) body += `<rect x="9" y="${y-4}" width="${w-18}" height="${rowH+4}" rx="3" fill="none" stroke="#c0413f" stroke-width="1.5"/>`;
-  }
-  const H = 46 + rows*(rowH+6) + 12;
-  return `<svg viewBox="0 0 ${w} ${H}" role="${big?"img":"presentation"}" ${big?`aria-label="Mock screenshot ${esc(name)}"`:'aria-hidden="true"'} xmlns="http://www.w3.org/2000/svg">
-    <rect width="${w}" height="${H}" fill="#f4f6f8"/><rect width="${w}" height="30" fill="#1b2733"/>
-    <circle cx="14" cy="15" r="4" fill="#5b6b7a"/><circle cx="28" cy="15" r="4" fill="#5b6b7a"/>
-    <rect x="44" y="10" width="120" height="10" rx="3" fill="#3b4a59"/>
-    <rect x="14" y="36" width="90" height="8" rx="2" fill="#8d9aa8"/>${body}</svg>`;
-}
 const opt = (s,sel) => `<option value="${s.id}" ${sel===s.id?"selected":""}>${esc(s.name)}</option>`;
 const sectionOptions = sel =>
   GROUPS.map(g=>`<optgroup label="${g}">${SECTIONS.filter(s=>s.group===g).map(s=>opt(s,sel)).join("")}</optgroup>`).join("")
@@ -459,22 +389,6 @@ function screenUser(){
           ${e.text?`<p class="err">${esc(e.text)}</p>`:""}
         </div>
 
-        <div class="field">
-          <label>Screenshots <span class="hint">· up to 3 files, PNG or JPG, 5 MB each</span></label>
-          ${f.files.length?`<ul class="files">${f.files.map((x,i)=>`
-            <li><span class="thumb">${x.dataUrl?`<img src="${x.dataUrl}" alt="">`:shotSVG(x.name,false)}</span>
-              <span class="fname">${esc(x.name)}</span>
-              <span class="fsize">${fmtSize(x.size)}</span>
-              <button type="button" class="btn-link" data-rmfile="${i}">remove</button></li>`).join("")}</ul>`:""}
-          ${e.file?`<p class="err">${esc(e.file)}</p>`:""}
-          ${f.note?`<p class="ok-line">${esc(f.note)}</p>`:""}
-          <div class="drop" id="drop">
-            <button type="button" class="btn-ghost" id="addfile" ${f.files.length>=3?"disabled":""}>Choose a file</button>
-            <span class="hint">Or take a screenshot and paste it right here: <span class="kbd">Ctrl + V</span> <span class="kbd">⌘ + V</span> — no need to save a file first.</span>
-          </div>
-          <span class="hint">${f.files.length>=3?"Three files is the limit.":`You can add ${3-f.files.length} more.`}</span>
-        </div>
-
         <div class="submitrow">
           <button class="btn" id="send">Submit</button>
           <span class="hint">We will email you if we need details.</span>
@@ -484,8 +398,6 @@ function screenUser(){
   </section>
   ${acNote([
     "No section, or text under 10 characters, does not go through — what you typed stays (AC2)",
-    "A screenshot pastes straight from the clipboard, with no file saved to disk",
-    "A file over 5 MB is rejected with a clear message, everything else stays (AC8)",
     "Identity comes from SSO only: the form has no field for an address (AC3)"])}`;
 }
 
@@ -500,12 +412,11 @@ function userSent(){
       <dl class="recap">
         <dt>Section</dt><dd>${esc(secLabel(f.section || "po-planning"))}</dd>
         <dt>Text</dt><dd>${esc(f.text || FEED[0].text)}</dd>
-        <dt>Files</dt><dd>${f.files.length? f.files.map(x=>esc(x.name)).join(", ") : "none attached"}</dd>
         <dt>Time</dt><dd class="mono">${esc(f.sentAt || "2026-09-10 11:42")}</dd>
       </dl>
       <button class="btn-ghost" id="again">Submit another one</button>
     </div></div></section>
-    ${acNote(["Confirmation appears as soon as the record is saved (AC1)","You can see exactly what was sent: section, text, files, time"])}`;
+    ${acNote(["Confirmation appears as soon as the record is saved (AC1)","You can see exactly what was sent: section, text, time"])}`;
 }
 
 function denyDomain(){
@@ -579,12 +490,11 @@ function screenAdmin(){
   </section>
   ${acNote([
     "A count per section above the filters; clicking one filters the list",
-    "Four columns: section, text with screenshots under it, author, date (AC4)",
+    "Four columns: section, text, author, date (AC4)",
     "Newest record on top by default; sorting by date and by section (AC4)",
     "Filter by section, date range and word, with a count of what matched (AC5)",
     "Excel and CSV export cover exactly the current selection; CSV is UTF-8 with BOM (AC6)",
-    "The admin list is visible and can be extended by pasting an address",
-    "Screenshots open from the row, served by our own handler after a permission check (AC8)"])}`;
+    "The admin list is visible and can be extended by pasting an address"])}`;
 }
 
 function tallyHTML(){
@@ -616,7 +526,6 @@ function rowHTML(r){
     <div class="c-section">${s && s.group!=="Other"?`<span class="grp">${esc(s.group.replace(" page",""))}</span>`:""}<span class="name">${esc(s?s.name:r.section)}</span></div>
     <div class="c-text">
       <p>${esc(r.text)}</p>
-      ${r.shots.length?`<div class="shots">${r.shots.map(n=>`<button class="shot" data-shot="${esc(n)}" title="${esc(n)}" aria-label="Open ${esc(n)}">${shotSVG(n,false)}</button>`).join("")}</div>`:""}
       <span class="id">#${r.id}</span>
     </div>
     <div class="c-author mono">${esc(r.email)}</div>
@@ -653,16 +562,16 @@ function flowSVG(){
     ${dash?'stroke-dasharray="4 3"':''} marker-end="url(#ar)"/>`;
   const lbl = (x,y,t)=>`<text x="${x}" y="${y}" font-size="10.5" fill="var(--ink-3)">${t}</text>`;
   return `<svg viewBox="0 0 1010 412" role="img"
-    aria-label="Схема: сотрудник и админ проходят SSO-шлюз, форма и кабинет обращаются к API, данные в PostgreSQL и томе uploads, из кабинета выгрузка xlsx и csv">
+    aria-label="Схема: сотрудник и админ проходят SSO-шлюз, форма и кабинет обращаются к API, данные в PostgreSQL, из кабинета выгрузка xlsx и csv">
     <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
 
     ${box(20,40,150,64,"Сотрудник",["браузер, ссылка","из план-факта"])}
     ${box(20,260,150,64,"Админ",["почта из списка","админов"])}
     ${box(210,40,180,284,"SSO-шлюз контура",["почта в заголовке","или подписанный JWT","подпись — по JWKS","домен сверяем сами","на сервере"],"gate")}
-    ${box(430,40,160,64,"Форма «/»",["Next.js + React","вставка из буфера"])}
-    ${box(620,40,170,64,"POST /api/feedback",["раздел из списка, ≥10","символов, ≤3 файлов"])}
-    ${box(620,150,380,64,"PostgreSQL (том)   ·   uploads/ (том)",["feedback · attachment · admin","имя файла на диске генерируем сами"],"store")}
+    ${box(430,40,160,64,"Форма «/»",["Next.js + React","раздел и текст"])}
+    ${box(620,40,170,64,"POST /api/feedback",["раздел из списка,","текст ≥10 символов"])}
+    ${box(620,150,380,64,"PostgreSQL (том)",["feedback · admin","том объявлен в compose"],"store")}
     ${box(430,260,160,64,"Кабинет «/admin»",["список админов —","проверка на сервере"])}
     ${box(620,260,170,64,"GET /api/feedback",["фильтр, сортировка,","счётчики по разделам"])}
     ${box(840,260,160,64,".xlsx / .csv",["ровно выборка","как на экране"])}
@@ -680,7 +589,7 @@ function flowSVG(){
     ${arrow("M705,214 V254")}
     ${arrow("M300,324 V344", true)}
     ${arrow("M510,324 V344", true)}
-    ${lbl(712,128,"INSERT + файлы на том")}
+    ${lbl(712,128,"INSERT")}
     ${lbl(712,240,"SELECT по фильтру")}
     ${lbl(20,150,"один вход")}
     ${lbl(20,164,"на весь контур")}
@@ -711,21 +620,19 @@ function screenDev(){
         <table class="tbl">
           <tr><th>Слой</th><th>Кандидат</th></tr>
           <tr><td class="k">Приложение</td><td>Next.js (App Router) + TypeScript, React. Форма, кабинет и API в одном сервисе</td></tr>
-          <tr><td class="k">База</td><td>PostgreSQL. Доступ — Prisma или Drizzle; чистый <span class="mono">pg</span> тоже проходит, таблиц три</td></tr>
+          <tr><td class="k">База</td><td>PostgreSQL. Доступ — Prisma или Drizzle; чистый <span class="mono">pg</span> тоже проходит, таблиц две</td></tr>
           <tr><td class="k">Валидация</td><td>zod на входе API. Те же правила, что в форме, но решает сервер</td></tr>
-          <tr><td class="k">Файлы</td><td>Диск сервиса, том <span class="mono">uploads/</span>. Наружу не выносим, S3 не нужен</td></tr>
           <tr><td class="k">Выгрузки</td><td>CSV своим кодом (UTF-8 с BOM), <span class="mono">.xlsx</span> — SheetJS или exceljs</td></tr>
           <tr><td class="k">Вход</td><td>Адаптер <span class="mono">getCurrentUser()</span> + <span class="mono">AUTH_MODE</span>. Резерв — Auth.js с Google OAuth</td></tr>
-          <tr><td class="k">Запуск</td><td>Docker Compose: приложение + Postgres + <b>объявленные тома</b> для базы и файлов</td></tr>
+          <tr><td class="k">Запуск</td><td>Docker Compose: приложение + Postgres + <b>объявленный том</b> для базы</td></tr>
         </table>
       </div>
       <div>
         <h2>Схема данных</h2>
-        <p class="sub">Три таблицы. Третья появилась, когда список админов переехал из конфига в кабинет.</p>
+        <p class="sub">Две таблицы. Вторая появилась, когда список админов переехал из конфига в кабинет.</p>
         <table class="tbl">
           <tr><th>Таблица</th><th>Колонки</th></tr>
           <tr><td class="k mono">feedback</td><td class="mono">id · author_email · section_id · text · created_at</td></tr>
-          <tr><td class="k mono">attachment</td><td class="mono">id · feedback_id · filename · mime · size · path</td></tr>
           <tr><td class="k mono">admin</td><td class="mono">email · added_by · added_at</td></tr>
         </table>
         <h3 style="margin-top:14px">Два решения, которые легко пропустить</h3>
@@ -766,34 +673,30 @@ function screenDev(){
 
     <div class="block">
       <h2>Чек-лист код-ревью</h2>
-      <p class="sub">Семь пунктов, каждый ловит конкретную поломку. Первый и последний — самые дорогие.</p>
+      <p class="sub">Пять пунктов, каждый ловит конкретную поломку. Первый и второй — самые дорогие.</p>
       <ol class="chk">
         <li><b>Заголовку с почтой доверяем только при выполненном условии</b> — подпись проверена либо приложение
         изолировано от прямого доступа. Иначе любой сотрудник пришлёт чужую почту в заголовке.</li>
-        <li><b>Тома в compose объявлены</b> для базы и <span class="mono">uploads/</span>. Без них первый же деплой обнуляет данные.
+        <li><b>Том в compose объявлен</b> для базы. Без него первый же деплой обнуляет данные.
         <span class="tag2 risk">самое дорогое</span></li>
         <li><b>Домен почты проверяется на сервере.</b> Шлюз пускает в контур и подрядчиков: «прошёл шлюз» ≠ «наш сотрудник».</li>
         <li><b>Почта только из <span class="mono">getCurrentUser()</span></b> — ни query, ни поле формы, ни присланный клиентом токен.</li>
         <li><b>Список админов проверяется на каждом запросе</b> — и к странице кабинета, и к его API, и к выгрузкам.</li>
-        <li><b>Тип и размер файла — на сервере</b>, имя от пользователя никогда не становится путём на диске.</li>
-        <li><b>Файлы отдаёт свой обработчик</b> после проверки прав, а не статика. Иначе ссылка на скриншот
-        работает у кого угодно.</li>
       </ol>
     </div>
 
     <div class="block">
       <h2>Тестировщикам: что проверять</h2>
-      <p class="sub">Восемь замороженных критериев приёмки и краевые случаи, которые из них не читаются напрямую.</p>
+      <p class="sub">Семь замороженных критериев приёмки и краевые случаи, которые из них не читаются напрямую.</p>
       <ul class="qa">
         <li><span class="ac">AC1</span><span>Отправка сохраняет запись с почтой, разделом, текстом и датой; подтверждение быстрее 3 секунд.</span></li>
-        <li><span class="ac">AC2</span><span>Без раздела и с текстом короче 10 символов не проходит; <b>введённый текст не теряется</b>, приложенные файлы остаются.</span></li>
+        <li><span class="ac">AC2</span><span>Без раздела и с текстом короче 10 символов не проходит; <b>введённый текст не теряется</b>.</span></li>
         <li><span class="ac">AC3</span><span>Почта вне корпоративного домена: явный отказ и на форме, и в кабинете. Проверять подделкой заголовка, если режим <span class="mono">proxy</span>.</span></li>
         <li><span class="ac">AC4</span><span>Админ видит все записи, свежая сверху; не-админ на этой странице получает отказ. Отдельно — прямой запрос к API кабинета без прав.</span></li>
         <li><span class="ac">AC5</span><span>Фильтры по разделу, периоду и слову; счётчик найденного совпадает с числом строк. «Filters» в Overview и в Position фильтруются <b>раздельно</b>.</span></li>
         <li><span class="ac">AC6</span><span>CSV открывается в Excel без битой кириллицы; <span class="mono">.xlsx</span> и CSV содержат ровно выборку с экрана в том же порядке.</span></li>
-        <li><span class="ac">AC7</span><span>После <span class="mono">docker compose down &amp;&amp; up</span> все записи и файлы на месте.</span></li>
-        <li><span class="ac">AC8</span><span>До 3 файлов PNG/JPG до 5 МБ; четвёртый и файл сверх лимита отклоняются с понятным текстом. Скриншот из буфера — тот же путь и те же лимиты.</span></li>
-        <li><span class="ac">край</span><span>Ссылка на скриншот из-под другого аккаунта и без входа. Файл с расширением <span class="mono">.png</span>, но не картинка. Текст с кавычками и точкой с запятой — не должен ломать CSV.</span></li>
+        <li><span class="ac">AC7</span><span>После <span class="mono">docker compose down &amp;&amp; up</span> все записи на месте.</span></li>
+        <li><span class="ac">край</span><span>Текст с кавычками и точкой с запятой — не должен ломать CSV.</span></li>
         <li><span class="ac">край</span><span><span class="mono">AUTH_MODE=dev</span> в проде: приложение не поднимается. Админ снял сам себя из списка. Одна и та же почта добавляется дважды.</span></li>
       </ul>
     </div>
@@ -802,7 +705,7 @@ function screenDev(){
       <h2>Что нужно от вас на встрече</h2>
       <div class="open">
         <div><span><b>Какой SSO стоит перед внутренними сервисами</b> и что именно он передаёт: заголовок или подписанный JWT, какое имя, есть ли JWKS. От этого зависит режим входа.</span><span class="tag2 prod">блокирует</span></div>
-        <div><span><b>Куда деплоим</b> внутри контура и кто владеет томами для базы и файлов.</span><span class="tag2 prod">блокирует</span></div>
+        <div><span><b>Куда деплоим</b> внутри контура и кто владеет томом для базы.</span><span class="tag2 prod">блокирует</span></div>
         <div><span><b>Приложение будет недоступно в обход прокси?</b> Если нет — режим <span class="mono">proxy</span> с голым заголовком некорректен, идём в резерв.</span><span class="tag2 risk">риск</span></div>
         <div><span><b>Стек и доступ к базе</b> — подтверждаете Next.js + PostgreSQL или меняете.</span><span class="tag2">за вами</span></div>
         <div><span>Кто создаёт OAuth-клиент в Workspace и как быстро — нужно только для резервного режима.</span><span class="tag2">за вами</span></div>
@@ -845,24 +748,17 @@ function applyScenario(){
   const s = state.scenario;
   if (state.role === "dev"){ render(); return; }
   if (state.role === "user"){
-    if (s === "blank") state.form = {section:"", text:"", files:[], errors:{}, note:"", sentAt:null, ticket:413};
+    if (s === "blank") state.form = {section:"", text:"", errors:{}, sentAt:null, ticket:413};
     if (s === "filled") state.form = {section:"ov-export",
       text:"The Overview export is missing a team column, so I merge two files by hand every time.",
-      files:[{name:"excel-export.png", size:2300000}], errors:{}, note:"", sentAt:null, ticket:413};
+      errors:{}, sentAt:null, ticket:413};
     if (s === "errors") state.form = {section:"", text:"broken",
-      files:[{name:"error-screen.png", size:412000}], note:"",
       errors:{section:"Choose the section your feedback is about.",
-              text:"Add a bit more detail: at least 10 characters, you have 6.",
-              file:"“screen-recording.png” is 7.6 MB, over the 5 MB limit. It was not attached; your text and other files are untouched."},
+              text:"Add a bit more detail: at least 10 characters, you have 6."},
       sentAt:null, ticket:413};
-    if (s === "pasted") state.form = {section:"ov-graph",
-      text:"Plan and fact are drawn in the same colour on the graph, I cannot tell the lines apart. Screenshot attached — pasted straight from the clipboard.",
-      files:[{name:"pasted-screenshot-1.png", size:246000}], errors:{},
-      note:"Screenshot pasted from the clipboard as “pasted-screenshot-1.png”.", sentAt:null, ticket:413};
     if (s === "sent") state.form = {section:"po-planning",
       text:"Copying planning to the next period breaks part-time positions: they come over as full-time. I fix 30 rows by hand every time.",
-      files:[{name:"planning-copy.png",size:840000},{name:"after-copy.png",size:1100000}],
-      errors:{}, note:"", sentAt:"2026-09-10 11:42", ticket:412};
+      errors:{}, sentAt:"2026-09-10 11:42", ticket:412};
   } else {
     if (s === "list" || s === "deny"){ state.filters = {section:"",from:"",to:"",q:""}; state.sort = "date-desc"; }
     if (s === "filtered"){ state.filters = {section:"ov-export", from:"2026-09-01", to:"2026-09-10", q:""}; state.sort = "date-desc"; }
@@ -880,10 +776,8 @@ document.getElementById("scen").onclick = e=>{
   state.scenario = b.dataset.scen; applyScenario();
 };
 
-const dlgPick = document.getElementById("dlg-pick");
 const dlgExp = document.getElementById("dlg-exp");
 const dlgAdm = document.getElementById("dlg-admins");
-const dlgShot = document.getElementById("dlg-shot");
 document.addEventListener("click", e=>{
   if (e.target.closest("[data-close]")) e.target.closest("dialog").close();
 });
@@ -908,8 +802,6 @@ app.addEventListener("input", e=>{
 
 app.addEventListener("click", e=>{
   const t = e.target;
-  if (t.id === "addfile"){ openPick(); return; }
-  if (t.dataset.rmfile !== undefined){ state.form.files.splice(+t.dataset.rmfile,1); state.form.note=""; render(); return; }
   if (t.id === "send"){ e.preventDefault(); submit(); return; }
   if (t.id === "again"){ state.scenario = "blank"; applyScenario(); return; }
   if (t.id === "f-reset" || t.id === "f-reset2"){ state.filters={section:"",from:"",to:"",q:""}; state.scenario="list"; render(); return; }
@@ -921,36 +813,6 @@ app.addEventListener("click", e=>{
   }
   if (t.id === "export"){ openExport(); return; }
   if (t.id === "admins"){ openAdmins(); return; }
-  const shot = t.closest("[data-shot]");
-  if (shot){ openShot(shot.dataset.shot); return; }
-});
-
-/* pasting a screenshot from the clipboard */
-let pasteCount = 0;
-document.addEventListener("paste", e=>{
-  if (state.role !== "user" || state.scenario === "deny" || state.scenario === "sent") return;
-  const items = [...(e.clipboardData?.items || [])].filter(i => i.type.startsWith("image/"));
-  if (!items.length) return;
-  e.preventDefault();
-  const f = state.form;
-  if (f.files.length >= 3){
-    f.errors = {...f.errors, file:"Three files are already attached — remove one to paste another."};
-    f.note = ""; render(); return;
-  }
-  const file = items[0].getAsFile(); if (!file) return;
-  if (file.size > 5*1024*1024){
-    f.errors = {...f.errors, file:`The pasted screenshot is ${fmtSize(file.size)}, over the 5 MB limit. Not attached; your text is untouched.`};
-    f.note = ""; render(); return;
-  }
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    const name = `pasted-screenshot-${++pasteCount}.png`;
-    delete f.errors.file;
-    f.files.push({name, size:file.size, dataUrl:reader.result});
-    f.note = `Screenshot pasted from the clipboard as "${name}".`;
-    render();
-  };
-  reader.readAsDataURL(file);
 });
 
 function submit(){
@@ -965,27 +827,9 @@ function submit(){
   state.scenario = "sent"; render();
 }
 
-function openPick(){
-  document.getElementById("pick-list").innerHTML = PICKABLE.map((p,i)=>`
-    <li><button data-pick="${i}"><span class="mono">${esc(p.name)}</span>
-      ${p.tooBig?`<span class="tag">over 5 MB</span>`:""}
-      <span class="fsize">${fmtSize(p.size)}</span></button></li>`).join("");
-  dlgPick.showModal();
-}
-document.getElementById("pick-list").onclick = e=>{
-  const b = e.target.closest("[data-pick]"); if(!b) return;
-  const p = PICKABLE[+b.dataset.pick]; dlgPick.close();
-  const f = state.form;
-  if (p.tooBig){
-    f.errors = {...f.errors, file:`"${p.name}" is ${fmtSize(p.size)}, over the 5 MB limit. It was not attached; your text and other files are untouched.`};
-    f.note = "";
-  } else { delete f.errors.file; f.files.push({name:p.name, size:p.size}); f.note = ""; }
-  render();
-};
-
 /* ── exports ── */
-const EXP_HEAD = ["#","Section","Message","Author","Date","Screenshots"];
-const expRows = rows => rows.map(r=>[r.id, secLabel(r.section), r.text, r.email, r.at, r.shots.join("; ")]);
+const EXP_HEAD = ["#","Section","Message","Author","Date"];
+const expRows = rows => rows.map(r=>[r.id, secLabel(r.section), r.text, r.email, r.at]);
 
 function csvText(rows){
   const cell = v => `"${String(v).replace(/"/g,'""')}"`;
@@ -993,7 +837,7 @@ function csvText(rows){
 }
 function xlsxBlob(rows){
   const ws = XLSX.utils.aoa_to_sheet([EXP_HEAD, ...expRows(rows)]);
-  ws["!cols"] = [{wch:6},{wch:26},{wch:70},{wch:34},{wch:18},{wch:30}];
+  ws["!cols"] = [{wch:6},{wch:26},{wch:70},{wch:34},{wch:18}];
   ws["!autofilter"] = {ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:rows.length, c:EXP_HEAD.length-1}})};
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Feedback");
@@ -1059,7 +903,7 @@ document.getElementById("admin-add").onclick = ()=>{
   const email = input.value.trim().toLowerCase();
   const fail = t => { msg.className = "err"; msg.textContent = t; input.focus(); };
   if (!email) return fail("Type an address first.");
-  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(email)) return fail("That does not look like an email address.");
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2}$/i.test(email)) return fail("That does not look like an email address.");
   if (!email.endsWith(DOMAIN)) return fail(`Corporate addresses on ${DOMAIN} only.`);
   if (ADMINS.some(a=>a.email===email)) return fail("That address is already on the list.");
   ADMINS.push({email, added:"2026-09-10 by " + ME.split("@")[0]});
@@ -1067,13 +911,6 @@ document.getElementById("admin-add").onclick = ()=>{
   msg.className = "ok-line"; msg.textContent = `${email} added — access applies the next time they open the inbox.`;
   renderAdmins(); render();
 };
-
-function openShot(name){
-  document.getElementById("shot-name").textContent = name;
-  document.getElementById("shot-body").innerHTML = shotSVG(name, true) +
-    `<p class="hint" style="margin:0">Mock image. In the real service the file is served by our own handler after a permission check, not as a static asset.</p>`;
-  dlgShot.showModal();
-}
 
 applyScenario();
 </script>
